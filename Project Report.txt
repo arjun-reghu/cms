@@ -1,0 +1,981 @@
+Project Report
+Centralized CMS & Asset Management System (AMS)
+1. Introduction
+
+The Centralized CMS & Asset Management System is a web-based enterprise platform designed to manage:
+
+Branch infrastructure
+
+Employee records
+
+IT assets
+
+Non-IT assets
+
+Onboarding & offboarding assistance tickets
+
+Agreements and renewals
+
+System users
+
+Audit logs and notifications
+
+The application provides role-based access control, allowing different departments to interact with the system based on their responsibilities.
+
+The system is designed for organizations with multiple branches and hundreds of employees, ensuring centralized control and traceability.
+
+2. System Objectives
+
+The system aims to:
+
+Maintain branch infrastructure information
+
+Manage IT and Non-IT assets
+
+Track asset assignment to employees
+
+Manage employee onboarding and offboarding
+
+Track agreements and renewals
+
+Maintain audit trails
+
+Generate reports and exports
+
+Provide role-based dashboards
+
+3. Technology Stack
+Layer	Technology
+Frontend	HTML, CSS, Bootstrap, JavaScript
+Template Engine	EJS
+Backend	Node.js + Express.js
+Database	MySQL
+Authentication	Express Session
+Reports	PDFKit
+Excel Handling	ExcelJS
+File Upload	Multer
+4. Role Based Access Control
+
+Roles are stored using Role IDs.
+
+Role ID	Role Name
+1	Admin
+2	HR
+3	Technician
+4	Auditor
+5	AdminTeam
+5. Role Privileges
+Role	Privileges
+Admin	Full system access
+HR	Assistance tickets and employee viewing
+Technician	Asset management and ticket processing
+Auditor	Read-only access
+AdminTeam	Non-IT asset management and agreements
+6. Application Route Structure
+Authentication
+/login
+/logout
+Admin Routes
+/admin/dashboard
+/admin/branches
+/admin/employees
+/admin/assets
+/admin/users
+/admin/reports
+
+/admin/assistance/tickets
+/admin/assistance/history
+HR Routes
+/hr/dashboard
+/hr/employees
+
+/hr/assistance/tickets
+/hr/assistance/history
+Technician Routes
+/technician/dashboard
+/technician/branches
+/technician/employees
+/technician/assets
+
+/technician/assistance/tickets
+/technician/assistance/history
+Auditor Routes
+/auditor/dashboard
+/auditor/branches
+/auditor/employees
+/auditor/assets
+/auditor/history
+Admin Team Routes
+/admin-team/dashboard
+/admin-team/branches
+/admin-team/assets
+/admin-team/agreements
+7. Sidebar Navigation Structure
+Home
+
+Branches
+
+Employees
+
+Assets
+   Branch Assets
+   Asset Catalogue
+   Employee Assets
+   Stock
+
+Assistance
+   Create Tickets
+   History
+
+Users
+
+Reports
+
+----------------
+Logout
+8. Dashboard Features
+Admin Dashboard
+
+Displays summary metrics:
+
+Total branches
+
+Total assets
+
+Pending approvals
+
+Total employees
+
+Total email accounts
+
+Total AD accounts
+
+AMC / warranty alerts
+
+HR Dashboard
+
+Displays:
+
+Open tickets
+
+Closed tickets
+
+Employee count
+
+Technician Dashboard
+
+Displays:
+
+Open onboarding/offboarding tickets
+
+Branch summary
+
+Asset statistics
+
+AdminTeam Dashboard
+
+Displays:
+
+Total branches
+
+Total non-IT assets
+
+Agreement alerts
+
+Agreements expiring soon
+
+9. Database Schema
+9.1 Roles Table
+roles
+------
+id
+role_name
+9.2 Users Table
+users
+------
+
+id
+employee_code
+employee_name
+department
+role_id
+password
+status
+created_at
+updated_at
+9.3 Branches Table
+
+Includes an updates column for branch change logs.
+
+branches
+--------
+
+id
+channel_code
+branch_code
+branch_name
+address
+pincode
+contact_number
+isp
+ip_address
+circuit_id
+billing_account
+isp_lc
+branch_opening_date
+agreement_start_date
+agreement_end_date
+internet_activated_date
+disconnected_date
+kseb_consumer_no
+updates
+status
+created_at
+updated_at
+9.4 Employees Table
+employees
+---------
+
+id
+employee_code
+employee_name
+designation
+department
+reporting_to
+contact_number
+date_of_birth
+branch_code
+email_id
+email_status
+ad_account_status
+status
+created_at
+updated_at
+9.5 Items Table (Asset Catalogue)
+
+Category table removed. Items represent categories.
+
+items
+------
+
+id
+item_name
+item_code
+asset_type (IT/NON_IT)
+created_at
+updated_at
+9.6 Makes Table
+makes
+-----
+
+id
+make_name
+created_at
+9.7 Models Table
+models
+------
+
+id
+make_id
+model_name
+created_at
+9.8 Assets Table
+assets
+-------
+
+id
+asset_code
+branch_code
+item_id
+make_id
+model_id
+serial_number
+count
+asset_type
+status
+created_at
+updated_at
+9.9 Asset History
+
+Tracks employee asset usage.
+
+asset_history
+--------------
+
+id
+asset_id
+employee_code
+assigned_date
+returned_date
+remarks
+10. Asset Code Generation Logic
+
+Three types of asset codes exist.
+
+10.1 IT Personal Devices
+
+Example:
+
+LAP/Dell/ABC12345
+
+Structure:
+
+Item / Make / SerialNumber
+
+Used for:
+
+Laptop
+
+Mobile
+
+Tablet
+
+10.2 IT Branch Assets
+
+If serial number available:
+
+BR001/KBD/Logitech/SN1234
+
+If serial number unavailable:
+
+BR001/KBD/Logitech/03
+
+Structure:
+
+BranchCode / Item / Make / Serial or Count
+10.3 Non-IT Assets
+
+Example:
+
+CH01/BR001/CHA/05
+
+Structure:
+
+Channel / Branch / ItemCode / Count
+11. Asset Transfer Logic
+
+Assets can be transferred between branches.
+
+Checkbox enables transfer.
+
+Transfer recorded in:
+
+asset_transfer_history
+Asset Transfer Table
+asset_transfer_history
+----------------------
+
+id
+asset_id
+from_branch
+to_branch
+transferred_by
+transfer_date
+remarks
+12. Assistance System
+
+Handles:
+
+Employee onboarding
+
+Employee offboarding
+
+Tickets Table
+tickets
+-------
+
+id
+ticket_code
+type
+created_by
+status
+created_at
+updated_at
+
+Types:
+
+onboarding
+offboarding
+Ticket Details Table
+ticket_details
+---------------
+
+id
+ticket_id
+employee_code
+email_required
+email_id
+laptop_required
+laptop_serial
+bag_model
+accessories
+remarks
+created_at
+updated_at
+13. Ticket Workflow
+Onboarding
+
+HR creates ticket.
+
+Technician processes ticket:
+
+Actions:
+
+create email
+
+assign laptop
+
+assign bag
+
+assign accessories
+
+Ticket closes when all required resources are assigned.
+
+Offboarding
+
+HR submits employee codes.
+
+Technician must:
+
+disable email
+
+disable AD account
+
+collect laptop
+
+collect bag
+
+collect accessories
+
+Ticket closes when all resources are returned.
+
+14. Agreement Management
+
+AdminTeam manages agreements.
+
+agreements
+----------
+id
+branch_code
+agreement_type
+vendor
+start_date
+end_date
+billing_account
+circuit_id
+amount
+status
+remarks
+created_at
+updated_at
+Agreement Alerts
+
+Dashboard alert when:
+
+end_date <= 30 days
+15. Logging and Monitoring
+
+Three logging systems implemented.
+
+Activity Logs
+activity_logs
+--------------
+
+id
+user_id
+module
+action
+description
+created_at
+
+Example:
+
+Admin updated branch BR001
+Technician assigned laptop
+Notifications
+notifications
+-------------
+
+id
+user_id
+title
+message
+status
+created_at
+Asset Transfer Logs
+
+Stored in
+
+asset_transfer_history
+16. Reports
+
+Reports available in:
+
+Reports Module
+
+Filters include:
+
+Channel code
+
+Branch code
+
+Asset type
+
+Category
+
+Make
+
+Model
+
+Export Options
+PDF
+
+Contains:
+
+Company Logo
+Downloaded Date
+Asset Table
+
+Columns:
+
+SlNo
+Channel Code
+Branch Code
+Branch Name
+Asset Code
+Asset Category
+Make
+Model
+Serial Number
+Count
+Excel
+
+Columns:
+
+SlNo
+Channel Code
+Branch Code
+Branch Name
+Asset Category
+Asset Code
+Make
+Model
+Serial Number
+Count
+17. Security Measures
+
+System includes:
+
+Password hashing (bcrypt)
+
+Session authentication
+
+Role-based access control
+
+Audit logs
+
+Input validation
+
+18. File Structure Overview
+cms-system
+config
+controllers
+middleware
+models
+routes
+services
+views
+public
+uploads
+
+Each module separated to maintain scalability.
+
+19. Future Enhancements
+
+Possible improvements:
+
+Email notifications
+
+Asset QR code labels
+
+Mobile asset scanning
+
+Automated agreement reminders
+
+Asset depreciation reports
+
+Asset maintenance tracking
+
+20. Conclusion
+
+The proposed system provides a centralized enterprise platform for managing:
+
+Infrastructure
+
+Assets
+
+Employees
+
+IT assistance
+
+Agreements
+
+The architecture supports multi-role access, full audit logging, and scalable database design, making it suitable for organizations with 100+ branches and thousands of assets.
+
+If you want, I can also create 3 extremely important additions to this document that will make your project much stronger technically:
+
+Complete ER Diagram (database relationships)
+
+Ticket workflow diagram
+
+Asset lifecycle flow (Stock → Assigned → Returned → Scrap)
+
+These will make the project very easy to implement without redesign later.
+
+21. Complete Project Folder Structure
+
+The system follows a modular MVC architecture to ensure maintainability and scalability.
+
+cms-system
+│
+├── server.js
+├── package.json
+│
+├── config
+│   └── db.js
+│
+├── middleware
+│   ├── authMiddleware.js
+│   └── roleMiddleware.js
+│
+├── routes
+│   ├── authRoutes.js
+│   ├── branchRoutes.js
+│   ├── employeeRoutes.js
+│   ├── assetRoutes.js
+│   ├── assistanceRoutes.js
+│   ├── userRoutes.js
+│   ├── agreementRoutes.js
+│   └── reportRoutes.js
+│
+├── controllers
+│   ├── authController.js
+│   ├── branchController.js
+│   ├── employeeController.js
+│   ├── assetController.js
+│   ├── assistanceController.js
+│   ├── userController.js
+│   ├── agreementController.js
+│   └── reportController.js
+│
+├── models
+│   ├── branchModel.js
+│   ├── employeeModel.js
+│   ├── assetModel.js
+│   ├── ticketModel.js
+│   ├── agreementModel.js
+│   ├── logModel.js
+│   └── userModel.js
+│
+├── services
+│   ├── assetCodeGenerator.js
+│   ├── pdfService.js
+│   ├── excelService.js
+│   └── notificationService.js
+│
+├── public
+│   ├── css
+│   ├── js
+│   └── images
+│
+├── views
+│
+│   ├── layouts
+│   │   ├── header.ejs
+│   │   ├── sidebar.ejs
+│   │   └── footer.ejs
+│
+│   ├── auth
+│   │   └── login.ejs
+│
+│   ├── admin
+│   │   ├── dashboard.ejs
+│   │   ├── branches.ejs
+│   │   ├── employees.ejs
+│   │   ├── assets.ejs
+│   │   ├── users.ejs
+│   │   └── reports.ejs
+│
+│   ├── admin-team
+│   │   ├── dashboard.ejs
+│   │   ├── branches.ejs
+│   │   ├── assets.ejs
+│   │   └── agreements.ejs
+│
+│   ├── hr
+│   │   ├── dashboard.ejs
+│   │   ├── employees.ejs
+│   │   └── assistance
+│   │       ├── tickets.ejs
+│   │       └── history.ejs
+│
+│   ├── technician
+│   │   ├── dashboard.ejs
+│   │   ├── branches.ejs
+│   │   ├── employees.ejs
+│   │   ├── assets.ejs
+│   │   └── assistance
+│   │       ├── tickets.ejs
+│   │       └── history.ejs
+│
+│   ├── auditor
+│   │   └── dashboard.ejs
+│
+└── uploads
+22. Permission Summary
+Module	Admin	HR	Technician	Auditor	AdminTeam
+Branches	Full	View	Edit	View	Edit
+Employees	Full	View	Edit	View	View
+IT Assets	Full	View	Full	View	No Access
+Non-IT Assets	Full	View	View	View	Full
+Asset Transfer	Full	No	Full	View	Full
+Assistance Tickets	Full	Create	Process	View	View
+Reports	Full	View	View	View	View
+Users	Full	No	No	No	No
+Agreements	Full	View	View	View	Full
+23. Database ER Diagram (Conceptual)
+
+The system contains relational connections between 12+ tables.
+
+ROLES
+  │
+  │1
+  │
+USERS
+  │
+  │
+ACTIVITY_LOGS
+Branch Relationships
+BRANCHES
+   │
+   │1
+   │
+   ├──── EMPLOYEES
+   │
+   ├──── ASSETS
+   │
+   └──── AGREEMENTS
+Asset Relationships
+ITEMS
+  │
+  │1
+  │
+ASSETS
+  │
+  ├──── ASSET_HISTORY
+  │
+  └──── ASSET_TRANSFER_HISTORY
+Employee Relationships
+EMPLOYEES
+   │
+   │
+   ├──── ASSET_HISTORY
+   │
+   └──── TICKET_DETAILS
+Ticket Relationships
+TICKETS
+   │
+   │1
+   │
+TICKET_DETAILS
+Notifications
+USERS
+  │
+  │
+NOTIFICATIONS
+24. Ticket Workflow Diagram
+Onboarding Process
+HR creates onboarding ticket
+        │
+        ▼
+Ticket stored in system
+        │
+        ▼
+Technician opens ticket
+        │
+        ▼
+Check requirements
+        │
+        ├─ Email required
+        │
+        ├─ Laptop required
+        │
+        ├─ Bag required
+        │
+        └─ Accessories
+        │
+        ▼
+Technician assigns resources
+        │
+        ▼
+Assets moved from STOCK → ASSIGNED
+        │
+        ▼
+Employee status becomes ACTIVE
+        │
+        ▼
+Ticket marked CLOSED
+Offboarding Workflow
+HR submits employee codes
+        │
+        ▼
+Offboarding ticket created
+        │
+        ▼
+Technician opens ticket
+        │
+        ▼
+System loads employee asset details
+        │
+        ▼
+Technician performs actions
+        │
+        ├ Disable Email
+        ├ Disable AD account
+        ├ Return Laptop
+        ├ Return Bag
+        └ Return Accessories
+        │
+        ▼
+Assets moved to STOCK
+        │
+        ▼
+Employee status = RESIGNED
+        │
+        ▼
+Ticket CLOSED
+25. Asset Lifecycle Flow
+
+Every asset moves through four lifecycle stages.
+
+Asset Purchased
+       │
+       ▼
+Stock Entry
+       │
+       ▼
+Assigned to Branch or Employee
+       │
+       ▼
+Returned to Stock
+       │
+       ▼
+Scrapped / Disposed
+Detailed Lifecycle
+1 Stock
+New assets added to inventory
+Status = STOCK
+2 Assigned
+Assigned to employee or branch
+Status = ASSIGNED
+
+Tracked in:
+
+asset_history
+3 Returned
+Returned during employee offboarding
+Status = STOCK
+4 Scrap
+Old / damaged assets removed
+Status = SCRAP
+
+Optional additional field:
+
+scrap_reason
+scrap_date
+26. Asset Transfer Flow
+Asset currently in Branch A
+        │
+Transfer initiated
+        │
+Select Branch B
+        │
+Transfer recorded
+        │
+Branch updated
+        │
+Entry stored in
+asset_transfer_history
+27. Logging System
+
+Three levels of logs exist.
+
+1 Activity Logs
+
+Tracks system actions.
+
+Examples
+
+Branch updated
+Asset assigned
+User created
+Ticket processed
+2 Asset Transfer Logs
+
+Tracks branch transfers.
+
+3 Notification Logs
+
+Stores system alerts.
+
+Examples
+
+Agreement expiring
+New ticket created
+Asset returned
+28. Reports Module
+
+Reports support filters:
+
+Channel Code
+Branch Code
+Asset Type
+Item
+Make
+Model
+
+Exports:
+
+PDF
+Excel
+Asset Code Labels
+29. Security Architecture
+
+Security features include:
+
+Password hashing
+Session authentication
+Role-based access control
+Activity logs
+Input validation
+30. System Scalability
+
+The architecture supports:
+
+100+ branches
+10,000+ assets
+1,000+ employees
+Multiple departments
+
+Database normalization prevents duplication and ensures performance.
+
+31. Future Improvements
+
+Possible enhancements:
+
+QR code asset tagging
+Barcode scanning
+Mobile technician portal
+Automated email alerts
+Asset depreciation reports
+Maintenance tracking

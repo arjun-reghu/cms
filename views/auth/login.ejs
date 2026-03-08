@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Centralized CMS & Asset Management System - Secure Login">
+    <title><%= title %></title>
+    <link rel="icon" type="image/png" href="/images/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <div class="login-card">
+                <!-- Logo -->
+                <div class="login-logo">
+                    <img src="/images/logo.png" alt="CMS Logo">
+                    <h1>CMS Portal</h1>
+                    <p>Centralized Management System</p>
+                </div>
+
+                <!-- Error Alert -->
+                <% if (error) { %>
+                    <div class="alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span><%= error %></span>
+                    </div>
+                <% } %>
+
+                <!-- Login Form -->
+                <form action="/login" method="POST" id="loginForm">
+                    <div class="form-group">
+                        <label for="employee_code">Employee Code</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-id-badge"></i>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="employee_code" 
+                                name="employee_code" 
+                                placeholder="Enter your employee code"
+                                autocomplete="username"
+                                required
+                                autofocus
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock"></i>
+                            <input 
+                                type="password" 
+                                class="form-control" 
+                                id="password" 
+                                name="password" 
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                required
+                            >
+                            <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password visibility">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-login" id="btnLogin">
+                        <i class="fas fa-sign-in-alt"></i>&nbsp; Sign In
+                    </button>
+                </form>
+
+                <!-- Footer -->
+                <div class="login-footer">
+                    <p>&copy; <%= new Date().getFullYear() %> Centralized Management System. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Password visibility toggle
+        const toggleBtn = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        toggleBtn.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            toggleBtn.querySelector('i').classList.toggle('fa-eye');
+            toggleBtn.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+
+        // Prevent double submit
+        const loginForm = document.getElementById('loginForm');
+        const btnLogin = document.getElementById('btnLogin');
+
+        loginForm.addEventListener('submit', () => {
+            btnLogin.disabled = true;
+            btnLogin.innerHTML = '<i class="fas fa-spinner fa-spin"></i>&nbsp; Signing in...';
+        });
+    </script>
+</body>
+</html>

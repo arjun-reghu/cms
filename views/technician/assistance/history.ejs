@@ -1,0 +1,57 @@
+<%- include('../../layouts/header') %>
+    <%- include('../../layouts/sidebar') %>
+        <div class="page-header">
+            <h2>Ticket History</h2>
+            <p>View all past tickets</p>
+        </div>
+        <div class="card">
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Type</th>
+                            <th>Created By</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (tickets.length===0) { %>
+                            <tr>
+                                <td colspan="6" class="empty-state">
+                                    <p>No history</p>
+                                </td>
+                            </tr>
+                            <% } %>
+                                <% tickets.forEach(t=> { %>
+                                    <tr>
+                                        <td><strong>
+                                                <%= t.ticket_code %>
+                                            </strong></td>
+                                        <td><span
+                                                class="badge badge-<%= t.type === 'onboarding' ? 'active' : 'inactive' %>">
+                                                <%= t.type %>
+                                            </span></td>
+                                        <td>
+                                            <%= t.created_by_name || '-' %>
+                                        </td>
+                                        <td><span class="badge badge-<%= t.status %>">
+                                                <%= t.status %>
+                                            </span></td>
+                                        <td>
+                                            <%= t.created_at ? new Date(t.created_at).toLocaleDateString('en-IN') : '-'
+                                                %>
+                                        </td>
+                                        <td>
+                                            <%= t.updated_at ? new Date(t.updated_at).toLocaleDateString('en-IN') : '-'
+                                                %>
+                                        </td>
+                                    </tr>
+                                    <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <%- include('../../layouts/footer') %>

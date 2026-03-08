@@ -1,0 +1,156 @@
+<%- include('../layouts/header') %>
+    <%- include('../layouts/sidebar') %>
+
+        <div class="page-header">
+            <h2>Reports</h2>
+            <p>Generate and export asset reports</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header"><span class="card-title"><i class="fas fa-filter"></i> Filters</span></div>
+            <form action="/admin/reports" method="GET">
+                <div class="form-row">
+                    <div class="form-group"><label>Channel Code</label>
+                        <select name="channel_code" class="form-control">
+                            <option value="">All Channels</option>
+                            <% const channels=[...new Set(branches.map(b=> b.channel_code).filter(Boolean))]; %>
+                                <% channels.forEach(ch=> { %><option value="<%= ch %>" <%=filters.channel_code===ch
+                                        ? 'selected' : '' %>><%= ch %>
+                                    </option>
+                                    <% }) %>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Branch</label>
+                        <select name="branch_code" class="form-control">
+                            <option value="">All Branches</option>
+                            <% branches.forEach(b=> { %><option value="<%= b.branch_code %>"
+                                    <%=filters.branch_code===b.branch_code ? 'selected' : '' %>><%= b.branch_code %> -
+                                        <%= b.branch_name %>
+                                </option>
+                                <% }) %>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Asset Type</label>
+                        <select name="asset_type" class="form-control">
+                            <option value="">All Types</option>
+                            <option value="IT" <%=filters.asset_type==='IT' ? 'selected' : '' %>>IT</option>
+                            <option value="NON_IT" <%=filters.asset_type==='NON_IT' ? 'selected' : '' %>>Non-IT</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Category</label>
+                        <select name="item_id" class="form-control">
+                            <option value="">All Categories</option>
+                            <% items.forEach(i=> { %><option value="<%= i.id %>" <%=filters.item_id==i.id ? 'selected'
+                                    : '' %>><%= i.item_name %>
+                                </option>
+                                <% }) %>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Make</label>
+                        <select name="make_id" class="form-control">
+                            <option value="">All Makes</option>
+                            <% makes.forEach(m=> { %><option value="<%= m.id %>" <%=filters.make_id==m.id ? 'selected'
+                                    : '' %>><%= m.make_name %>
+                                </option>
+                                <% }) %>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Model</label>
+                        <select name="model_id" class="form-control">
+                            <option value="">All Models</option>
+                            <% models.forEach(m=> { %><option value="<%= m.id %>" <%=filters.model_id==m.id ? 'selected'
+                                    : '' %>><%= m.model_name %>
+                                </option>
+                                <% }) %>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Apply Filters</button>
+                    <a href="/admin/reports" class="btn btn-outline"><i class="fas fa-times"></i> Clear</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Export Buttons -->
+        <div class="action-bar">
+            <span style="color:var(--text-secondary);">
+                <%= assets.length %> assets found
+            </span>
+            <div class="filter-group">
+                <a href="/admin/reports/export/pdf?<%= new URLSearchParams(filters).toString() %>"
+                    class="btn btn-danger"><i class="fas fa-file-pdf"></i> Export PDF</a>
+                <a href="/admin/reports/export/excel?<%= new URLSearchParams(filters).toString() %>"
+                    class="btn btn-success"><i class="fas fa-file-excel"></i> Export Excel</a>
+            </div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="card">
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>SlNo</th>
+                            <th>Channel</th>
+                            <th>Branch Code</th>
+                            <th>Branch Name</th>
+                            <th>Asset Code</th>
+                            <th>Category</th>
+                            <th>Make</th>
+                            <th>Model</th>
+                            <th>Serial No</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (assets.length===0) { %>
+                            <tr>
+                                <td colspan="10" class="empty-state"><i class="fas fa-chart-bar"></i>
+                                    <p>No assets match the selected filters</p>
+                                </td>
+                            </tr>
+                            <% } %>
+                                <% assets.forEach((a, idx)=> { %>
+                                    <tr>
+                                        <td>
+                                            <%= idx + 1 %>
+                                        </td>
+                                        <td>
+                                            <%= a.channel_code || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= a.branch_code || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= a.branch_name || '-' %>
+                                        </td>
+                                        <td><strong>
+                                                <%= a.asset_code %>
+                                            </strong></td>
+                                        <td>
+                                            <%= a.item_name || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= a.make_name || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= a.model_name || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= a.serial_number || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= a.count || 1 %>
+                                        </td>
+                                    </tr>
+                                    <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <%- include('../layouts/footer') %>

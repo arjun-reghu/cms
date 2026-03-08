@@ -1,0 +1,66 @@
+<%- include('../layouts/header') %>
+    <%- include('../layouts/sidebar') %>
+        <div class="page-header">
+            <h2>Assets</h2>
+            <p>View asset records (read-only)</p>
+        </div>
+        <div class="action-bar">
+            <div class="search-box"><i class="fas fa-search"></i><input type="text" placeholder="Search..."
+                    onkeyup="filterTable('assetTable', this.value)"></div>
+        </div>
+        <div class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="assetTable">
+                    <thead>
+                        <tr>
+                            <th>Asset Code</th>
+                            <th>Category</th>
+                            <th>Make</th>
+                            <th>Model</th>
+                            <th>Serial No</th>
+                            <th>Branch</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (assets.length===0) { %>
+                            <tr>
+                                <td colspan="8" class="empty-state">
+                                    <p>No assets</p>
+                                </td>
+                            </tr>
+                            <% } %>
+                                <% assets.forEach(a=> { %><tr>
+                                        <td><strong>
+                                                <%= a.asset_code %>
+                                            </strong></td>
+                                        <td>
+                                            <%= a.item_name || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= a.make_name || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= a.model_name || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= a.serial_number || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= a.branch_name || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= a.asset_type %>
+                                        </td>
+                                        <td><span class="badge badge-<%= a.status %>">
+                                                <%= a.status %>
+                                            </span></td>
+                                    </tr>
+                                    <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <script>function filterTable(t, q) { document.getElementById(t).querySelectorAll('tbody tr').forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none' }); }</script>
+        <%- include('../layouts/footer') %>

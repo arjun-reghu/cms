@@ -1,0 +1,81 @@
+<%- include('../../layouts/header') %>
+    <%- include('../../layouts/sidebar') %>
+        <div class="page-header">
+            <h2>Process Tickets</h2>
+            <p>Process onboarding and offboarding tickets</p>
+        </div>
+        <% if (success) { %>
+            <div class="flash-message flash-success"><i class="fas fa-check-circle"></i>
+                <%= success %>
+            </div>
+            <% } %>
+                <% if (error) { %>
+                    <div class="flash-message flash-error"><i class="fas fa-exclamation-circle"></i>
+                        <%= error %>
+                    </div>
+                    <% } %>
+                        <div class="card">
+                            <div class="table-wrapper">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>Type</th>
+                                            <th>Created By</th>
+                                            <th>Status</th>
+                                            <th>Created</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% if (tickets.length===0) { %>
+                                            <tr>
+                                                <td colspan="6" class="empty-state"><i class="fas fa-ticket-alt"></i>
+                                                    <p>No open tickets to process</p>
+                                                </td>
+                                            </tr>
+                                            <% } %>
+                                                <% tickets.forEach(t=> { %>
+                                                    <tr>
+                                                        <td><strong>
+                                                                <%= t.ticket_code %>
+                                                            </strong></td>
+                                                        <td><span
+                                                                class="badge badge-<%= t.type === 'onboarding' ? 'active' : 'inactive' %>">
+                                                                <%= t.type %>
+                                                            </span></td>
+                                                        <td>
+                                                            <%= t.created_by_name || '-' %>
+                                                        </td>
+                                                        <td><span class="badge badge-<%= t.status %>">
+                                                                <%= t.status %>
+                                                            </span></td>
+                                                        <td>
+                                                            <%= t.created_at ? new
+                                                                Date(t.created_at).toLocaleDateString('en-IN') : '-' %>
+                                                        </td>
+                                                        <td>
+                                                            <form action="/technician/assistance/tickets/process"
+                                                                method="POST" style="display:inline;">
+                                                                <input type="hidden" name="ticket_id"
+                                                                    value="<%= t.id %>">
+                                                                <input type="hidden" name="status" value="in_progress">
+                                                                <button type="submit" class="btn btn-sm btn-warning"><i
+                                                                        class="fas fa-play"></i> Process</button>
+                                                            </form>
+                                                            <form action="/technician/assistance/tickets/process"
+                                                                method="POST" style="display:inline;">
+                                                                <input type="hidden" name="ticket_id"
+                                                                    value="<%= t.id %>">
+                                                                <input type="hidden" name="status" value="closed">
+                                                                <button type="submit" class="btn btn-sm btn-success"><i
+                                                                        class="fas fa-check"></i> Close</button>
+                                                            </form>
+                                                        </td>
+                                                    </tr>
+                                                    <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <%- include('../../layouts/footer') %>

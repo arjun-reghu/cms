@@ -1,0 +1,55 @@
+<%- include('../layouts/header') %>
+    <%- include('../layouts/sidebar') %>
+        <div class="page-header">
+            <h2>Audit History</h2>
+            <p>Full activity log</p>
+        </div>
+        <div class="action-bar">
+            <div class="search-box"><i class="fas fa-search"></i><input type="text" placeholder="Search logs..."
+                    onkeyup="filterTable('logTable', this.value)"></div>
+        </div>
+        <div class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="logTable">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Module</th>
+                            <th>Action</th>
+                            <th>Description</th>
+                            <th>When</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (logs.length===0) { %>
+                            <tr>
+                                <td colspan="5" class="empty-state"><i class="fas fa-clipboard-list"></i>
+                                    <p>No activity logs</p>
+                                </td>
+                            </tr>
+                            <% } %>
+                                <% logs.forEach(l=> { %><tr>
+                                        <td>
+                                            <%= l.employee_name || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= l.module %>
+                                        </td>
+                                        <td>
+                                            <%= l.action %>
+                                        </td>
+                                        <td style="color:var(--text-secondary);">
+                                            <%= l.description %>
+                                        </td>
+                                        <td>
+                                            <%= l.created_at ? new Date(l.created_at).toLocaleDateString('en-IN') : '-'
+                                                %>
+                                        </td>
+                                    </tr>
+                                    <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <script>function filterTable(t, q) { document.getElementById(t).querySelectorAll('tbody tr').forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none' }); }</script>
+        <%- include('../layouts/footer') %>

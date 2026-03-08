@@ -1,0 +1,157 @@
+<%- include('../layouts/header') %>
+    <%- include('../layouts/sidebar') %>
+        <div class="page-header">
+            <h2>Employees</h2>
+            <p>View and edit employee records</p>
+        </div>
+        <% if (success) { %>
+            <div class="flash-message flash-success"><i class="fas fa-check-circle"></i>
+                <%= success %>
+            </div>
+            <% } %>
+                <% if (error) { %>
+                    <div class="flash-message flash-error"><i class="fas fa-exclamation-circle"></i>
+                        <%= error %>
+                    </div>
+                    <% } %>
+                        <div class="action-bar">
+                            <div class="search-box"><i class="fas fa-search"></i><input type="text"
+                                    placeholder="Search..." onkeyup="filterTable('empTable', this.value)"></div>
+                        </div>
+                        <div class="card">
+                            <div class="table-wrapper">
+                                <table class="data-table" id="empTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>Name</th>
+                                            <th>Designation</th>
+                                            <th>Department</th>
+                                            <th>Branch</th>
+                                            <th>Email Status</th>
+                                            <th>AD Status</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% if (employees.length===0) { %>
+                                            <tr>
+                                                <td colspan="9" class="empty-state">
+                                                    <p>No employees</p>
+                                                </td>
+                                            </tr>
+                                            <% } %>
+                                                <% employees.forEach(emp=> { %>
+                                                    <tr>
+                                                        <td><strong>
+                                                                <%= emp.employee_code %>
+                                                            </strong></td>
+                                                        <td>
+                                                            <%= emp.employee_name %>
+                                                        </td>
+                                                        <td>
+                                                            <%= emp.designation || '-' %>
+                                                        </td>
+                                                        <td>
+                                                            <%= emp.department || '-' %>
+                                                        </td>
+                                                        <td>
+                                                            <%= emp.branch_name || '-' %>
+                                                        </td>
+                                                        <td><span class="badge badge-<%= emp.email_status %>">
+                                                                <%= emp.email_status %>
+                                                            </span></td>
+                                                        <td><span class="badge badge-<%= emp.ad_account_status %>">
+                                                                <%= emp.ad_account_status %>
+                                                            </span></td>
+                                                        <td><span class="badge badge-<%= emp.status %>">
+                                                                <%= emp.status %>
+                                                            </span></td>
+                                                        <td><button class="btn btn-sm btn-outline"
+                                                                onclick="editEmp(<%- JSON.stringify(emp) %>)"><i
+                                                                    class="fas fa-edit"></i></button></td>
+                                                    </tr>
+                                                    <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-overlay" id="editEmpModal">
+                            <div class="modal">
+                                <div class="modal-header">
+                                    <h3>Edit Employee</h3><button class="modal-close"
+                                        onclick="closeModal('editEmpModal')">&times;</button>
+                                </div>
+                                <form id="editEmpForm" method="POST">
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Code</label><input type="text"
+                                                class="form-control" id="ee_code" disabled></div>
+                                        <div class="form-group"><label>Name</label><input type="text"
+                                                name="employee_name" class="form-control" id="ee_name" required></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Designation</label><input type="text"
+                                                name="designation" class="form-control" id="ee_desig"></div>
+                                        <div class="form-group"><label>Department</label><input type="text"
+                                                name="department" class="form-control" id="ee_dept"></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Branch</label><select name="branch_code"
+                                                class="form-control" id="ee_branch">
+                                                <option value="">Select</option>
+                                                <% branches.forEach(b=> { %><option value="<%= b.branch_code %>">
+                                                        <%= b.branch_code %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select></div>
+                                        <div class="form-group"><label>Contact</label><input type="text"
+                                                name="contact_number" class="form-control" id="ee_contact"></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Email</label><input type="email" name="email_id"
+                                                class="form-control" id="ee_email"></div>
+                                        <div class="form-group"><label>Email Status</label><select name="email_status"
+                                                class="form-control" id="ee_emailst">
+                                                <option value="not_created">Not Created</option>
+                                                <option value="active">Active</option>
+                                                <option value="inactive">Inactive</option>
+                                            </select></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>AD Status</label><select name="ad_account_status"
+                                                class="form-control" id="ee_ad">
+                                                <option value="not_created">Not Created</option>
+                                                <option value="active">Active</option>
+                                                <option value="inactive">Inactive</option>
+                                            </select></div>
+                                        <div class="form-group"><label>Status</label><select name="status"
+                                                class="form-control" id="ee_status">
+                                                <option value="active">Active</option>
+                                                <option value="resigned">Resigned</option>
+                                                <option value="terminated">Terminated</option>
+                                            </select></div>
+                                    </div>
+                                    <input type="hidden" name="reporting_to" id="ee_reporting"><input type="hidden"
+                                        name="date_of_birth" id="ee_dob">
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i>
+                                        Update</button>
+                                </form>
+                            </div>
+                        </div>
+                        <script>
+                            function openModal(id) { document.getElementById(id).classList.add('active'); }
+                            function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+                            function editEmp(e) {
+                                document.getElementById('editEmpForm').action = '/technician/employees/update/' + e.id;
+                                document.getElementById('ee_code').value = e.employee_code; document.getElementById('ee_name').value = e.employee_name || '';
+                                document.getElementById('ee_desig').value = e.designation || ''; document.getElementById('ee_dept').value = e.department || '';
+                                document.getElementById('ee_branch').value = e.branch_code || ''; document.getElementById('ee_contact').value = e.contact_number || '';
+                                document.getElementById('ee_email').value = e.email_id || ''; document.getElementById('ee_emailst').value = e.email_status || 'not_created';
+                                document.getElementById('ee_ad').value = e.ad_account_status || 'not_created'; document.getElementById('ee_status').value = e.status || 'active';
+                                document.getElementById('ee_reporting').value = e.reporting_to || ''; document.getElementById('ee_dob').value = e.date_of_birth ? e.date_of_birth.substring(0, 10) : '';
+                                openModal('editEmpModal');
+                            }
+                            function filterTable(t, q) { document.getElementById(t).querySelectorAll('tbody tr').forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none' }); }
+                        </script>
+                        <%- include('../layouts/footer') %>

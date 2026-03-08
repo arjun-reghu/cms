@@ -1,0 +1,231 @@
+<%- include('../layouts/header') %>
+    <%- include('../layouts/sidebar') %>
+
+        <div class="page-header">
+            <h2>Agreements</h2>
+            <p>Manage vendor agreements and renewals</p>
+        </div>
+
+        <% if (success) { %>
+            <div class="flash-message flash-success"><i class="fas fa-check-circle"></i>
+                <%= success %>
+            </div>
+            <% } %>
+                <% if (error) { %>
+                    <div class="flash-message flash-error"><i class="fas fa-exclamation-circle"></i>
+                        <%= error %>
+                    </div>
+                    <% } %>
+
+                        <div class="action-bar">
+                            <div class="search-box"><i class="fas fa-search"></i><input type="text"
+                                    placeholder="Search agreements..." onkeyup="filterTable('agTable', this.value)">
+                            </div>
+                            <button class="btn btn-primary" onclick="openModal('addAgModal')"><i
+                                    class="fas fa-plus"></i> Add Agreement</button>
+                        </div>
+
+                        <div class="card">
+                            <div class="table-wrapper">
+                                <table class="data-table" id="agTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Branch</th>
+                                            <th>Type</th>
+                                            <th>Vendor</th>
+                                            <th>Start</th>
+                                            <th>End</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% if (agreements.length===0) { %>
+                                            <tr>
+                                                <td colspan="8" class="empty-state"><i class="fas fa-file-contract"></i>
+                                                    <p>No agreements found</p>
+                                                </td>
+                                            </tr>
+                                            <% } %>
+                                                <% agreements.forEach(ag=> { %>
+                                                    <% const isExpiring=ag.status==='active' && ag.end_date && new
+                                                        Date(ag.end_date) <=new Date(Date.now() + 30*24*60*60*1000) &&
+                                                        new Date(ag.end_date)>= new Date(); %>
+                                                        <tr
+                                                            style="<%= isExpiring ? 'border-left: 3px solid var(--warning);' : '' %>">
+                                                            <td>
+                                                                <%= ag.branch_name || ag.branch_code || '-' %>
+                                                            </td>
+                                                            <td>
+                                                                <%= ag.agreement_type || '-' %>
+                                                            </td>
+                                                            <td>
+                                                                <%= ag.vendor || '-' %>
+                                                            </td>
+                                                            <td>
+                                                                <%= ag.start_date ? new
+                                                                    Date(ag.start_date).toLocaleDateString('en-IN')
+                                                                    : '-' %>
+                                                            </td>
+                                                            <td>
+                                                                <%= ag.end_date ? new
+                                                                    Date(ag.end_date).toLocaleDateString('en-IN') : '-'
+                                                                    %>
+                                                                    <%= isExpiring ? '⚠️' : '' %>
+                                                            </td>
+                                                            <td>
+                                                                <%= ag.amount ? '₹' +
+                                                                    parseFloat(ag.amount).toLocaleString('en-IN') : '-'
+                                                                    %>
+                                                            </td>
+                                                            <td><span class="badge badge-<%= ag.status %>">
+                                                                    <%= ag.status %>
+                                                                </span></td>
+                                                            <td>
+                                                                <button class="btn btn-sm btn-outline"
+                                                                    onclick="editAg(<%- JSON.stringify(ag) %>)"><i
+                                                                        class="fas fa-edit"></i></button>
+                                                                <form action="/admin/agreements/delete/<%= ag.id %>"
+                                                                    method="POST" style="display:inline;"
+                                                                    onsubmit="return confirmDelete('Delete this agreement?')">
+                                                                    <button type="submit"
+                                                                        class="btn btn-sm btn-danger"><i
+                                                                            class="fas fa-trash"></i></button>
+                                                                </form>
+                                                            </td>
+                                                        </tr>
+                                                        <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Add Agreement Modal -->
+                        <div class="modal-overlay" id="addAgModal">
+                            <div class="modal">
+                                <div class="modal-header">
+                                    <h3>Add Agreement</h3><button class="modal-close"
+                                        onclick="closeModal('addAgModal')">&times;</button>
+                                </div>
+                                <form action="/admin/agreements" method="POST">
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Branch *</label>
+                                            <select name="branch_code" class="form-control" required>
+                                                <option value="">Select</option>
+                                                <% branches.forEach(b=> { %><option value="<%= b.branch_code %>">
+                                                        <%= b.branch_code %> - <%= b.branch_name %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select>
+                                        </div>
+                                        <div class="form-group"><label>Agreement Type</label><input type="text"
+                                                name="agreement_type" class="form-control"
+                                                placeholder="e.g. ISP, Maintenance"></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Vendor</label><input type="text" name="vendor"
+                                                class="form-control"></div>
+                                        <div class="form-group"><label>Amount</label><input type="number" name="amount"
+                                                class="form-control" step="0.01"></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Start Date</label><input type="date"
+                                                name="start_date" class="form-control"></div>
+                                        <div class="form-group"><label>End Date</label><input type="date"
+                                                name="end_date" class="form-control"></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Billing Account</label><input type="text"
+                                                name="billing_account" class="form-control"></div>
+                                        <div class="form-group"><label>Circuit ID</label><input type="text"
+                                                name="circuit_id" class="form-control"></div>
+                                    </div>
+                                    <div class="form-group"><label>Remarks</label><textarea name="remarks"
+                                            class="form-control" rows="2"></textarea></div>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i>
+                                        Save</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Edit Agreement Modal -->
+                        <div class="modal-overlay" id="editAgModal">
+                            <div class="modal">
+                                <div class="modal-header">
+                                    <h3>Edit Agreement</h3><button class="modal-close"
+                                        onclick="closeModal('editAgModal')">&times;</button>
+                                </div>
+                                <form id="editAgForm" method="POST">
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Branch</label>
+                                            <select name="branch_code" class="form-control" id="eag_branch">
+                                                <option value="">Select</option>
+                                                <% branches.forEach(b=> { %><option value="<%= b.branch_code %>">
+                                                        <%= b.branch_code %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select>
+                                        </div>
+                                        <div class="form-group"><label>Type</label><input type="text"
+                                                name="agreement_type" class="form-control" id="eag_type"></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Vendor</label><input type="text" name="vendor"
+                                                class="form-control" id="eag_vendor"></div>
+                                        <div class="form-group"><label>Amount</label><input type="number" name="amount"
+                                                class="form-control" id="eag_amount" step="0.01"></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Start Date</label><input type="date"
+                                                name="start_date" class="form-control" id="eag_start"></div>
+                                        <div class="form-group"><label>End Date</label><input type="date"
+                                                name="end_date" class="form-control" id="eag_end"></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Billing Account</label><input type="text"
+                                                name="billing_account" class="form-control" id="eag_billing"></div>
+                                        <div class="form-group"><label>Circuit ID</label><input type="text"
+                                                name="circuit_id" class="form-control" id="eag_circuit"></div>
+                                    </div>
+                                    <div class="form-group"><label>Status</label>
+                                        <select name="status" class="form-control" id="eag_status">
+                                            <option value="active">Active</option>
+                                            <option value="expired">Expired</option>
+                                            <option value="terminated">Terminated</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group"><label>Remarks</label><textarea name="remarks"
+                                            class="form-control" id="eag_remarks" rows="2"></textarea></div>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i>
+                                        Update</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <script>
+                            function openModal(id) { document.getElementById(id).classList.add('active'); }
+                            function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+                            function formatDate(d) { return d ? d.substring(0, 10) : ''; }
+                            function editAg(ag) {
+                                document.getElementById('editAgForm').action = '/admin/agreements/update/' + ag.id;
+                                document.getElementById('eag_branch').value = ag.branch_code || '';
+                                document.getElementById('eag_type').value = ag.agreement_type || '';
+                                document.getElementById('eag_vendor').value = ag.vendor || '';
+                                document.getElementById('eag_amount').value = ag.amount || '';
+                                document.getElementById('eag_start').value = formatDate(ag.start_date);
+                                document.getElementById('eag_end').value = formatDate(ag.end_date);
+                                document.getElementById('eag_billing').value = ag.billing_account || '';
+                                document.getElementById('eag_circuit').value = ag.circuit_id || '';
+                                document.getElementById('eag_status').value = ag.status;
+                                document.getElementById('eag_remarks').value = ag.remarks || '';
+                                openModal('editAgModal');
+                            }
+                            function filterTable(tableId, query) {
+                                const rows = document.getElementById(tableId).querySelectorAll('tbody tr');
+                                query = query.toLowerCase();
+                                rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none'; });
+                            }
+                        </script>
+
+                        <%- include('../layouts/footer') %>

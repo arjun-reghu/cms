@@ -1,0 +1,195 @@
+<%- include('../layouts/header') %>
+    <%- include('../layouts/sidebar') %>
+
+        <div class="page-header">
+            <h2>System Users</h2>
+            <p>Manage user accounts and roles</p>
+        </div>
+
+        <% if (success) { %>
+            <div class="flash-message flash-success"><i class="fas fa-check-circle"></i>
+                <%= success %>
+            </div>
+            <% } %>
+                <% if (error) { %>
+                    <div class="flash-message flash-error"><i class="fas fa-exclamation-circle"></i>
+                        <%= error %>
+                    </div>
+                    <% } %>
+
+                        <div class="action-bar">
+                            <div class="search-box"><i class="fas fa-search"></i><input type="text"
+                                    placeholder="Search users..." onkeyup="filterTable('userTable', this.value)"></div>
+                            <button class="btn btn-primary" onclick="openModal('addUserModal')"><i
+                                    class="fas fa-plus"></i> Add User</button>
+                        </div>
+
+                        <div class="card">
+                            <div class="table-wrapper">
+                                <table class="data-table" id="userTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Employee Code</th>
+                                            <th>Name</th>
+                                            <th>Department</th>
+                                            <th>Role</th>
+                                            <th>Status</th>
+                                            <th>Created</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% if (users.length===0) { %>
+                                            <tr>
+                                                <td colspan="7" class="empty-state"><i class="fas fa-user-cog"></i>
+                                                    <p>No users found</p>
+                                                </td>
+                                            </tr>
+                                            <% } %>
+                                                <% users.forEach(u=> { %>
+                                                    <tr>
+                                                        <td><strong>
+                                                                <%= u.employee_code %>
+                                                            </strong></td>
+                                                        <td>
+                                                            <%= u.employee_name %>
+                                                        </td>
+                                                        <td>
+                                                            <%= u.department || '-' %>
+                                                        </td>
+                                                        <td><span class="badge badge-active">
+                                                                <%= u.role_name %>
+                                                            </span></td>
+                                                        <td><span class="badge badge-<%= u.status %>">
+                                                                <%= u.status %>
+                                                            </span></td>
+                                                        <td>
+                                                            <%= u.created_at ? new
+                                                                Date(u.created_at).toLocaleDateString('en-IN') : '-' %>
+                                                        </td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-outline"
+                                                                onclick="editUser(<%- JSON.stringify(u) %>)"><i
+                                                                    class="fas fa-edit"></i></button>
+                                                            <% if (u.employee_code !=='ADMIN' ) { %>
+                                                                <form action="/admin/users/delete/<%= u.id %>"
+                                                                    method="POST" style="display:inline;"
+                                                                    onsubmit="return confirmDelete('Delete this user?')">
+                                                                    <button type="submit"
+                                                                        class="btn btn-sm btn-danger"><i
+                                                                            class="fas fa-trash"></i></button>
+                                                                </form>
+                                                                <% } %>
+                                                        </td>
+                                                    </tr>
+                                                    <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Add User Modal -->
+                        <div class="modal-overlay" id="addUserModal">
+                            <div class="modal">
+                                <div class="modal-header">
+                                    <h3>Add New User</h3><button class="modal-close"
+                                        onclick="closeModal('addUserModal')">&times;</button>
+                                </div>
+                                <form action="/admin/users" method="POST">
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Employee Code *</label><input type="text"
+                                                name="employee_code" class="form-control" required></div>
+                                        <div class="form-group"><label>Employee Name *</label><input type="text"
+                                                name="employee_name" class="form-control" required></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Department</label><input type="text"
+                                                name="department" class="form-control"></div>
+                                        <div class="form-group"><label>Role *</label>
+                                            <select name="role_id" class="form-control" required>
+                                                <% roles.forEach(r=> { %><option value="<%= r.id %>">
+                                                        <%= r.role_name %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Password *</label><input type="password"
+                                                name="password" class="form-control" required></div>
+                                        <div class="form-group"><label>Status</label>
+                                            <select name="status" class="form-control">
+                                                <option value="active">Active</option>
+                                                <option value="inactive">Inactive</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save
+                                        User</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Edit User Modal -->
+                        <div class="modal-overlay" id="editUserModal">
+                            <div class="modal">
+                                <div class="modal-header">
+                                    <h3>Edit User</h3><button class="modal-close"
+                                        onclick="closeModal('editUserModal')">&times;</button>
+                                </div>
+                                <form id="editUserForm" method="POST">
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Employee Code</label><input type="text"
+                                                class="form-control" id="eu_employee_code" disabled></div>
+                                        <div class="form-group"><label>Employee Name *</label><input type="text"
+                                                name="employee_name" class="form-control" id="eu_employee_name"
+                                                required></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Department</label><input type="text"
+                                                name="department" class="form-control" id="eu_department"></div>
+                                        <div class="form-group"><label>Role *</label>
+                                            <select name="role_id" class="form-control" id="eu_role_id">
+                                                <% roles.forEach(r=> { %><option value="<%= r.id %>">
+                                                        <%= r.role_name %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>New Password (leave blank to keep)</label><input
+                                                type="password" name="password" class="form-control"></div>
+                                        <div class="form-group"><label>Status</label>
+                                            <select name="status" class="form-control" id="eu_status">
+                                                <option value="active">Active</option>
+                                                <option value="inactive">Inactive</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update
+                                        User</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <script>
+                            function openModal(id) { document.getElementById(id).classList.add('active'); }
+                            function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+                            function editUser(u) {
+                                document.getElementById('editUserForm').action = '/admin/users/update/' + u.id;
+                                document.getElementById('eu_employee_code').value = u.employee_code;
+                                document.getElementById('eu_employee_name').value = u.employee_name;
+                                document.getElementById('eu_department').value = u.department || '';
+                                document.getElementById('eu_role_id').value = u.role_id;
+                                document.getElementById('eu_status').value = u.status;
+                                openModal('editUserModal');
+                            }
+                            function filterTable(tableId, query) {
+                                const rows = document.getElementById(tableId).querySelectorAll('tbody tr');
+                                query = query.toLowerCase();
+                                rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none'; });
+                            }
+                        </script>
+
+                        <%- include('../layouts/footer') %>

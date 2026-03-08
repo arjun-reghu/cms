@@ -1,0 +1,119 @@
+<%- include('../../layouts/header') %>
+    <%- include('../../layouts/sidebar') %>
+        <div class="page-header">
+            <h2>Assistance Tickets</h2>
+            <p>Create onboarding and offboarding tickets</p>
+        </div>
+        <% if (success) { %>
+            <div class="flash-message flash-success"><i class="fas fa-check-circle"></i>
+                <%= success %>
+            </div>
+            <% } %>
+                <% if (error) { %>
+                    <div class="flash-message flash-error"><i class="fas fa-exclamation-circle"></i>
+                        <%= error %>
+                    </div>
+                    <% } %>
+
+                        <div class="action-bar">
+                            <div class="search-box"><i class="fas fa-search"></i><input type="text"
+                                    placeholder="Search tickets..." onkeyup="filterTable('ticketTable', this.value)">
+                            </div>
+                            <button class="btn btn-primary" onclick="openModal('createTicketModal')"><i
+                                    class="fas fa-plus"></i> Create Ticket</button>
+                        </div>
+
+                        <div class="card">
+                            <div class="table-wrapper">
+                                <table class="data-table" id="ticketTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>Type</th>
+                                            <th>Created By</th>
+                                            <th>Status</th>
+                                            <th>Created</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% if (tickets.length===0) { %>
+                                            <tr>
+                                                <td colspan="5" class="empty-state"><i class="fas fa-ticket-alt"></i>
+                                                    <p>No open tickets</p>
+                                                </td>
+                                            </tr>
+                                            <% } %>
+                                                <% tickets.forEach(t=> { %>
+                                                    <tr>
+                                                        <td><strong>
+                                                                <%= t.ticket_code %>
+                                                            </strong></td>
+                                                        <td><span
+                                                                class="badge badge-<%= t.type === 'onboarding' ? 'active' : 'inactive' %>">
+                                                                <%= t.type %>
+                                                            </span></td>
+                                                        <td>
+                                                            <%= t.created_by_name || '-' %>
+                                                        </td>
+                                                        <td><span class="badge badge-<%= t.status %>">
+                                                                <%= t.status %>
+                                                            </span></td>
+                                                        <td>
+                                                            <%= t.created_at ? new
+                                                                Date(t.created_at).toLocaleDateString('en-IN') : '-' %>
+                                                        </td>
+                                                    </tr>
+                                                    <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="modal-overlay" id="createTicketModal">
+                            <div class="modal">
+                                <div class="modal-header">
+                                    <h3>Create Ticket</h3><button class="modal-close"
+                                        onclick="closeModal('createTicketModal')">&times;</button>
+                                </div>
+                                <form action="/hr/assistance/tickets" method="POST">
+                                    <div class="form-group"><label>Ticket Type *</label>
+                                        <select name="type" class="form-control" required>
+                                            <option value="onboarding">Onboarding</option>
+                                            <option value="offboarding">Offboarding</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group"><label>Employee *</label>
+                                        <select name="employee_code" class="form-control" required>
+                                            <option value="">Select Employee</option>
+                                            <% employees.forEach(e=> { %><option value="<%= e.employee_code %>">
+                                                    <%= e.employee_code %> - <%= e.employee_name %>
+                                                </option>
+                                                <% }) %>
+                                        </select>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label><input type="checkbox" name="email_required"
+                                                    value="1"> Email Required</label></div>
+                                        <div class="form-group"><label><input type="checkbox" name="laptop_required"
+                                                    value="1"> Laptop Required</label></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Bag Model</label><input type="text"
+                                                name="bag_model" class="form-control"></div>
+                                        <div class="form-group"><label>Accessories</label><input type="text"
+                                                name="accessories" class="form-control"></div>
+                                    </div>
+                                    <div class="form-group"><label>Remarks</label><textarea name="remarks"
+                                            class="form-control" rows="2"></textarea></div>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Create
+                                        Ticket</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <script>
+                            function openModal(id) { document.getElementById(id).classList.add('active'); }
+                            function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+                            function filterTable(t, q) { document.getElementById(t).querySelectorAll('tbody tr').forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none' }); }
+                        </script>
+                        <%- include('../../layouts/footer') %>

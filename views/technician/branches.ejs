@@ -1,0 +1,123 @@
+<%- include('../layouts/header') %>
+    <%- include('../layouts/sidebar') %>
+        <div class="page-header">
+            <h2>Branches</h2>
+            <p>View and edit branch information</p>
+        </div>
+        <% if (success) { %>
+            <div class="flash-message flash-success"><i class="fas fa-check-circle"></i>
+                <%= success %>
+            </div>
+            <% } %>
+                <% if (error) { %>
+                    <div class="flash-message flash-error"><i class="fas fa-exclamation-circle"></i>
+                        <%= error %>
+                    </div>
+                    <% } %>
+                        <div class="action-bar">
+                            <div class="search-box"><i class="fas fa-search"></i><input type="text"
+                                    placeholder="Search..." onkeyup="filterTable('branchTable', this.value)"></div>
+                        </div>
+                        <div class="card">
+                            <div class="table-wrapper">
+                                <table class="data-table" id="branchTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Branch Code</th>
+                                            <th>Name</th>
+                                            <th>Channel</th>
+                                            <th>Contact</th>
+                                            <th>ISP</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% if (branches.length===0) { %>
+                                            <tr>
+                                                <td colspan="7" class="empty-state">
+                                                    <p>No branches</p>
+                                                </td>
+                                            </tr>
+                                            <% } %>
+                                                <% branches.forEach(b=> { %>
+                                                    <tr>
+                                                        <td><strong>
+                                                                <%= b.branch_code %>
+                                                            </strong></td>
+                                                        <td>
+                                                            <%= b.branch_name %>
+                                                        </td>
+                                                        <td>
+                                                            <%= b.channel_code || '-' %>
+                                                        </td>
+                                                        <td>
+                                                            <%= b.contact_number || '-' %>
+                                                        </td>
+                                                        <td>
+                                                            <%= b.isp || '-' %>
+                                                        </td>
+                                                        <td><span class="badge badge-<%= b.status %>">
+                                                                <%= b.status %>
+                                                            </span></td>
+                                                        <td><button class="btn btn-sm btn-outline"
+                                                                onclick="editBranch(<%- JSON.stringify(b) %>)"><i
+                                                                    class="fas fa-edit"></i></button></td>
+                                                    </tr>
+                                                    <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-overlay" id="editBranchModal">
+                            <div class="modal">
+                                <div class="modal-header">
+                                    <h3>Edit Branch</h3><button class="modal-close"
+                                        onclick="closeModal('editBranchModal')">&times;</button>
+                                </div>
+                                <form id="editBranchForm" method="POST">
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Branch Code</label><input type="text"
+                                                class="form-control" id="eb_code" disabled></div>
+                                        <div class="form-group"><label>Branch Name</label><input type="text"
+                                                name="branch_name" class="form-control" id="eb_name" required></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Channel Code</label><input type="text"
+                                                name="channel_code" class="form-control" id="eb_channel"></div>
+                                        <div class="form-group"><label>Contact</label><input type="text"
+                                                name="contact_number" class="form-control" id="eb_contact"></div>
+                                    </div>
+                                    <div class="form-group"><label>Address</label><textarea name="address"
+                                            class="form-control" id="eb_address" rows="2"></textarea></div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>ISP</label><input type="text" name="isp"
+                                                class="form-control" id="eb_isp"></div>
+                                        <div class="form-group"><label>IP Address</label><input type="text"
+                                                name="ip_address" class="form-control" id="eb_ip"></div>
+                                    </div>
+                                    <div class="form-group"><label>Status</label><select name="status"
+                                            class="form-control" id="eb_status">
+                                            <option value="active">Active</option>
+                                            <option value="inactive">Inactive</option>
+                                            <option value="closed">Closed</option>
+                                        </select></div>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i>
+                                        Update</button>
+                                </form>
+                            </div>
+                        </div>
+                        <script>
+                            function openModal(id) { document.getElementById(id).classList.add('active'); }
+                            function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+                            function editBranch(b) {
+                                document.getElementById('editBranchForm').action = '/technician/branches/update/' + b.id;
+                                document.getElementById('eb_code').value = b.branch_code; document.getElementById('eb_name').value = b.branch_name || '';
+                                document.getElementById('eb_channel').value = b.channel_code || ''; document.getElementById('eb_contact').value = b.contact_number || '';
+                                document.getElementById('eb_address').value = b.address || ''; document.getElementById('eb_isp').value = b.isp || '';
+                                document.getElementById('eb_ip').value = b.ip_address || ''; document.getElementById('eb_status').value = b.status;
+                                openModal('editBranchModal');
+                            }
+                            function filterTable(t, q) { document.getElementById(t).querySelectorAll('tbody tr').forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none' }); }
+                        </script>
+                        <%- include('../layouts/footer') %>

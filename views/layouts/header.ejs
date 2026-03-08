@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= typeof title !=='undefined' ? title : 'CMS' %>
+    </title>
+    <link rel="icon" type="image/png" href="/images/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <!-- Top Navbar -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="navbar-brand">
+                <img src="/images/logo.png" alt="CMS Logo" class="navbar-logo">
+                <span>CMS Portal</span>
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="navbar-notifications" id="notifDropdown">
+                <button class="notif-btn">
+                    <i class="fas fa-bell"></i>
+                    <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+                </button>
+            </div>
+            <div class="navbar-user">
+                <div class="user-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="user-info">
+                    <span class="user-name">
+                        <%= user.employee_name %>
+                    </span>
+                    <span class="user-role">
+                        <%= user.role_name %>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Layout Wrapper -->
+    <div class="layout-wrapper">

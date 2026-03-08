@@ -1,0 +1,228 @@
+<%- include('../layouts/header') %>
+    <%- include('../layouts/sidebar') %>
+        <div class="page-header">
+            <h2>Non-IT Assets</h2>
+            <p>Manage non-IT assets (furniture, signage, etc.)</p>
+        </div>
+        <% if (success) { %>
+            <div class="flash-message flash-success"><i class="fas fa-check-circle"></i>
+                <%= success %>
+            </div>
+            <% } %>
+                <% if (error) { %>
+                    <div class="flash-message flash-error"><i class="fas fa-exclamation-circle"></i>
+                        <%= error %>
+                    </div>
+                    <% } %>
+                        <div class="action-bar">
+                            <div class="search-box"><i class="fas fa-search"></i><input type="text"
+                                    placeholder="Search..." onkeyup="filterTable('assetTable', this.value)"></div>
+                            <button class="btn btn-primary" onclick="openModal('addAssetModal')"><i
+                                    class="fas fa-plus"></i> Add Asset</button>
+                        </div>
+                        <div class="card">
+                            <div class="table-wrapper">
+                                <table class="data-table" id="assetTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Asset Code</th>
+                                            <th>Category</th>
+                                            <th>Make</th>
+                                            <th>Model</th>
+                                            <th>Branch</th>
+                                            <th>Count</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% if (assets.length===0) { %>
+                                            <tr>
+                                                <td colspan="8" class="empty-state"><i class="fas fa-chair"></i>
+                                                    <p>No non-IT assets</p>
+                                                </td>
+                                            </tr>
+                                            <% } %>
+                                                <% assets.forEach(a=> { %><tr>
+                                                        <td><strong>
+                                                                <%= a.asset_code %>
+                                                            </strong></td>
+                                                        <td>
+                                                            <%= a.item_name || '-' %>
+                                                        </td>
+                                                        <td>
+                                                            <%= a.make_name || '-' %>
+                                                        </td>
+                                                        <td>
+                                                            <%= a.model_name || '-' %>
+                                                        </td>
+                                                        <td>
+                                                            <%= a.branch_name || '-' %>
+                                                        </td>
+                                                        <td>
+                                                            <%= a.count || 1 %>
+                                                        </td>
+                                                        <td><span class="badge badge-<%= a.status %>">
+                                                                <%= a.status %>
+                                                            </span></td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-outline"
+                                                                onclick="editAsset(<%- JSON.stringify(a) %>)"><i
+                                                                    class="fas fa-edit"></i></button>
+                                                            <button class="btn btn-sm btn-warning"
+                                                                onclick="transferAsset(<%- JSON.stringify(a) %>)"><i
+                                                                    class="fas fa-exchange-alt"></i></button>
+                                                            <form action="/admin-team/assets/delete/<%= a.id %>"
+                                                                method="POST" style="display:inline;"
+                                                                onsubmit="return confirmDelete()"><button type="submit"
+                                                                    class="btn btn-sm btn-danger"><i
+                                                                        class="fas fa-trash"></i></button></form>
+                                                        </td>
+                                                    </tr>
+                                                    <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- Add Modal -->
+                        <div class="modal-overlay" id="addAssetModal">
+                            <div class="modal">
+                                <div class="modal-header">
+                                    <h3>Add Non-IT Asset</h3><button class="modal-close"
+                                        onclick="closeModal('addAssetModal')">&times;</button>
+                                </div>
+                                <form action="/admin-team/assets" method="POST">
+                                    <input type="hidden" name="asset_type" value="NON_IT">
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Asset Code *</label><input type="text"
+                                                name="asset_code" class="form-control" required></div>
+                                        <div class="form-group"><label>Category</label><select name="item_id"
+                                                class="form-control">
+                                                <option value="">Select</option>
+                                                <% items.forEach(i=> { %><option value="<%= i.id %>">
+                                                        <%= i.item_name %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Branch</label><select name="branch_code"
+                                                class="form-control">
+                                                <option value="">Select</option>
+                                                <% branches.forEach(b=> { %><option value="<%= b.branch_code %>">
+                                                        <%= b.branch_code %> - <%= b.branch_name %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select></div>
+                                        <div class="form-group"><label>Make</label><select name="make_id"
+                                                class="form-control">
+                                                <option value="">Select</option>
+                                                <% makes.forEach(m=> { %><option value="<%= m.id %>">
+                                                        <%= m.make_name %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Model</label><select name="model_id"
+                                                class="form-control">
+                                                <option value="">Select</option>
+                                                <% models.forEach(m=> { %><option value="<%= m.id %>">
+                                                        <%= m.model_name %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select></div>
+                                        <div class="form-group"><label>Count</label><input type="number" name="count"
+                                                class="form-control" value="1" min="1"></div>
+                                    </div>
+                                    <div class="form-group"><label>Status</label><select name="status"
+                                            class="form-control">
+                                            <option value="stock">Stock</option>
+                                            <option value="assigned">Assigned</option>
+                                            <option value="scrap">Scrap</option>
+                                        </select></div>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i>
+                                        Save</button>
+                                </form>
+                            </div>
+                        </div>
+                        <!-- Edit Modal -->
+                        <div class="modal-overlay" id="editAssetModal">
+                            <div class="modal">
+                                <div class="modal-header">
+                                    <h3>Edit Asset</h3><button class="modal-close"
+                                        onclick="closeModal('editAssetModal')">&times;</button>
+                                </div>
+                                <form id="editAssetForm" method="POST">
+                                    <input type="hidden" name="asset_type" value="NON_IT">
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Code</label><input type="text"
+                                                class="form-control" id="ea_code" disabled></div>
+                                        <div class="form-group"><label>Category</label><select name="item_id"
+                                                class="form-control" id="ea_item">
+                                                <option value="">Select</option>
+                                                <% items.forEach(i=> { %><option value="<%= i.id %>">
+                                                        <%= i.item_name %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select></div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Branch</label><select name="branch_code"
+                                                class="form-control" id="ea_branch">
+                                                <option value="">Select</option>
+                                                <% branches.forEach(b=> { %><option value="<%= b.branch_code %>">
+                                                        <%= b.branch_code %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select></div>
+                                        <div class="form-group"><label>Count</label><input type="number" name="count"
+                                                class="form-control" id="ea_count" min="1"></div>
+                                    </div>
+                                    <div class="form-group"><label>Status</label><select name="status"
+                                            class="form-control" id="ea_status">
+                                            <option value="stock">Stock</option>
+                                            <option value="assigned">Assigned</option>
+                                            <option value="scrap">Scrap</option>
+                                        </select></div>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i>
+                                        Update</button>
+                                </form>
+                            </div>
+                        </div>
+                        <!-- Transfer Modal -->
+                        <div class="modal-overlay" id="transferModal">
+                            <div class="modal">
+                                <div class="modal-header">
+                                    <h3>Transfer Asset</h3><button class="modal-close"
+                                        onclick="closeModal('transferModal')">&times;</button>
+                                </div>
+                                <form action="/admin-team/assets/transfer" method="POST"><input type="hidden"
+                                        name="asset_id" id="tr_id"><input type="hidden" name="from_branch" id="tr_from">
+                                    <div class="form-group"><label>Asset</label><input type="text" class="form-control"
+                                            id="tr_code" disabled></div>
+                                    <div class="form-group"><label>From</label><input type="text" class="form-control"
+                                            id="tr_from_d" disabled></div>
+                                    <div class="form-group"><label>To Branch *</label><select name="to_branch"
+                                            class="form-control" required>
+                                            <option value="">Select</option>
+                                            <% branches.forEach(b=> { %><option value="<%= b.branch_code %>">
+                                                    <%= b.branch_code %> - <%= b.branch_name %>
+                                                </option>
+                                                <% }) %>
+                                        </select></div>
+                                    <div class="form-group"><label>Remarks</label><input type="text" name="remarks"
+                                            class="form-control"></div>
+                                    <button type="submit" class="btn btn-warning"><i class="fas fa-exchange-alt"></i>
+                                        Transfer</button>
+                                </form>
+                            </div>
+                        </div>
+                        <script>
+                            function openModal(id) { document.getElementById(id).classList.add('active'); }
+                            function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+                            function editAsset(a) { document.getElementById('editAssetForm').action = '/admin-team/assets/update/' + a.id; document.getElementById('ea_code').value = a.asset_code; document.getElementById('ea_item').value = a.item_id || ''; document.getElementById('ea_branch').value = a.branch_code || ''; document.getElementById('ea_count').value = a.count || 1; document.getElementById('ea_status').value = a.status; openModal('editAssetModal'); }
+                            function transferAsset(a) { document.getElementById('tr_id').value = a.id; document.getElementById('tr_code').value = a.asset_code; document.getElementById('tr_from').value = a.branch_code || ''; document.getElementById('tr_from_d').value = a.branch_code ? a.branch_code + ' - ' + (a.branch_name || '') : 'N/A'; openModal('transferModal'); }
+                            function filterTable(t, q) { document.getElementById(t).querySelectorAll('tbody tr').forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none' }); }
+                        </script>
+                        <%- include('../layouts/footer') %>

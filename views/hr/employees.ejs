@@ -1,0 +1,63 @@
+<%- include('../layouts/header') %>
+    <%- include('../layouts/sidebar') %>
+        <div class="page-header">
+            <h2>Employees</h2>
+            <p>View employee records</p>
+        </div>
+        <div class="action-bar">
+            <div class="search-box"><i class="fas fa-search"></i><input type="text" placeholder="Search..."
+                    onkeyup="filterTable('empTable', this.value)"></div>
+        </div>
+        <div class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="empTable">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Designation</th>
+                            <th>Department</th>
+                            <th>Branch</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (employees.length===0) { %>
+                            <tr>
+                                <td colspan="7" class="empty-state">
+                                    <p>No employees</p>
+                                </td>
+                            </tr>
+                            <% } %>
+                                <% employees.forEach(emp=> { %>
+                                    <tr>
+                                        <td><strong>
+                                                <%= emp.employee_code %>
+                                            </strong></td>
+                                        <td>
+                                            <%= emp.employee_name %>
+                                        </td>
+                                        <td>
+                                            <%= emp.designation || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= emp.department || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= emp.branch_name || '-' %>
+                                        </td>
+                                        <td>
+                                            <%= emp.email_id || '-' %>
+                                        </td>
+                                        <td><span class="badge badge-<%= emp.status %>">
+                                                <%= emp.status %>
+                                            </span></td>
+                                    </tr>
+                                    <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <script>function filterTable(t, q) { document.getElementById(t).querySelectorAll('tbody tr').forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none' }); }</script>
+        <%- include('../layouts/footer') %>

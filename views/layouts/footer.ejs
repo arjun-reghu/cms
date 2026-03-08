@@ -1,0 +1,41 @@
+</main>
+</div><!-- /.layout-wrapper -->
+
+<script>
+    // Sidebar toggle
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+
+    sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        mainContent.classList.toggle('expanded');
+    });
+
+    // Dropdown toggles
+    document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+        toggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            const dropdown = toggle.closest('.sidebar-dropdown');
+            dropdown.classList.toggle('open');
+        });
+    });
+
+    // Delete confirmation
+    function confirmDelete(message) {
+        return confirm(message || 'Are you sure you want to delete this?');
+    }
+
+    // Flash message auto-hide
+    const flashMessages = document.querySelectorAll('.flash-message');
+    flashMessages.forEach(msg => {
+        setTimeout(() => {
+            msg.style.opacity = '0';
+            msg.style.transform = 'translateY(-10px)';
+            setTimeout(() => msg.remove(), 300);
+        }, 4000);
+    });
+</script>
+</body>
+
+</html>

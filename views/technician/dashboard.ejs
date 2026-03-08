@@ -1,0 +1,46 @@
+<%- include('../layouts/header') %>
+    <%- include('../layouts/sidebar') %>
+        <div class="page-header">
+            <h2>Dashboard</h2>
+            <p>Welcome, <%= user.employee_name %>
+            </p>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card yellow">
+                <div class="stat-icon"><i class="fas fa-user-plus"></i></div>
+                <div class="stat-info">
+                    <h3>
+                        <%= onboardingOpen %>
+                    </h3>
+                    <p>Onboarding Tickets</p>
+                </div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-icon"><i class="fas fa-user-minus"></i></div>
+                <div class="stat-info">
+                    <h3>
+                        <%= offboardingOpen %>
+                    </h3>
+                    <p>Offboarding Tickets</p>
+                </div>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-icon"><i class="fas fa-building"></i></div>
+                <div class="stat-info">
+                    <h3>
+                        <%= branchCount %>
+                    </h3>
+                    <p>Total Branches</p>
+                </div>
+            </div>
+            <div class="stat-card cyan">
+                <div class="stat-icon"><i class="fas fa-box"></i></div>
+                <div class="stat-info">
+                    <h3>
+                        <%= assetCount %>
+                    </h3>
+                    <p>Total Assets</p>
+                </div>
+            </div>
+        </div>
+        <%- include('../layouts/footer') %>

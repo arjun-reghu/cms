@@ -1,0 +1,73 @@
+<%- include('../../layouts/header') %>
+    <%- include('../../layouts/sidebar') %>
+
+        <div class="page-header">
+            <h2>Ticket History</h2>
+            <p>View all past tickets</p>
+        </div>
+
+        <div class="action-bar">
+            <div class="search-box"><i class="fas fa-search"></i><input type="text" placeholder="Search history..."
+                    onkeyup="filterTable('historyTable', this.value)"></div>
+        </div>
+
+        <div class="card">
+            <div class="table-wrapper">
+                <table class="data-table" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Ticket Code</th>
+                            <th>Type</th>
+                            <th>Created By</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (tickets.length===0) { %>
+                            <tr>
+                                <td colspan="6" class="empty-state"><i class="fas fa-clock-rotate-left"></i>
+                                    <p>No ticket history</p>
+                                </td>
+                            </tr>
+                            <% } %>
+                                <% tickets.forEach(t=> { %>
+                                    <tr>
+                                        <td><strong>
+                                                <%= t.ticket_code %>
+                                            </strong></td>
+                                        <td><span
+                                                class="badge badge-<%= t.type === 'onboarding' ? 'active' : 'inactive' %>">
+                                                <%= t.type %>
+                                            </span></td>
+                                        <td>
+                                            <%= t.created_by_name || '-' %>
+                                        </td>
+                                        <td><span class="badge badge-<%= t.status %>">
+                                                <%= t.status %>
+                                            </span></td>
+                                        <td>
+                                            <%= t.created_at ? new Date(t.created_at).toLocaleDateString('en-IN') : '-'
+                                                %>
+                                        </td>
+                                        <td>
+                                            <%= t.updated_at ? new Date(t.updated_at).toLocaleDateString('en-IN') : '-'
+                                                %>
+                                        </td>
+                                    </tr>
+                                    <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <script>
+            function filterTable(tableId, query) {
+                const rows = document.getElementById(tableId).querySelectorAll('tbody tr');
+                query = query.toLowerCase();
+                rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none'; });
+            }
+        </script>
+
+        <%- include('../../layouts/footer') %>

@@ -32,18 +32,27 @@
                         </select>
                     </div>
                     <div class="form-group"><label>Asset Type</label>
-                        <select name="asset_type" class="form-control">
+                        <select name="asset_type" class="form-control" id="filterAssetType" onchange="onAssetTypeChange()">
                             <option value="">All Types</option>
                             <option value="IT" <%=filters.asset_type==='IT' ? 'selected' : '' %>>IT</option>
-                            <option value="NON_IT" <%=filters.asset_type==='NON_IT' ? 'selected' : '' %>>Non-IT</option>
+                            <option value="ADMIN" <%=filters.asset_type==='ADMIN' ? 'selected' : '' %>>Admin</option>
                         </select>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Category</label>
-                        <select name="item_id" class="form-control">
+                        <select name="category_id" class="form-control" id="filterCategory" onchange="onCategoryChange()">
                             <option value="">All Categories</option>
-                            <% items.forEach(i=> { %><option value="<%= i.id %>" <%=filters.item_id==i.id ? 'selected'
+                            <% if (typeof categories !== 'undefined') { categories.forEach(cat=> { %><option value="<%= cat.id %>" data-type="<%= cat.asset_type %>" <%=filters.category_id==cat.id ? 'selected'
+                                    : '' %>><%= cat.category_name %>
+                                </option>
+                                <% }) } %>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Sub Category</label>
+                        <select name="item_id" class="form-control" id="filterSubCategory">
+                            <option value="">All Sub Categories</option>
+                            <% items.forEach(i=> { %><option value="<%= i.id %>" data-type="<%= i.asset_type %>" data-category="<%= i.category_id %>" <%=filters.item_id==i.id ? 'selected'
                                     : '' %>><%= i.item_name %>
                                 </option>
                                 <% }) %>
@@ -73,6 +82,62 @@
                     <a href="/admin/reports" class="btn btn-outline"><i class="fas fa-times"></i> Clear</a>
                 </div>
             </form>
+
+            <script>
+                function onAssetTypeChange() {
+                    var type = document.getElementById('filterAssetType').value;
+                    var catSelect = document.getElementById('filterCategory');
+                    var subSelect = document.getElementById('filterSubCategory');
+
+                    // Filter categories
+                    var catOptions = catSelect.querySelectorAll('option[data-type]');
+                    catSelect.value = '';
+                    catOptions.forEach(function(opt) {
+                        opt.style.display = (!type || opt.getAttribute('data-type') === type) ? '' : 'none';
+                    });
+
+                    // Filter sub categories by type (and reset)
+                    subSelect.value = '';
+                    var subOptions = subSelect.querySelectorAll('option[data-type]');
+                    subOptions.forEach(function(opt) {
+                        opt.style.display = (!type || opt.getAttribute('data-type') === type) ? '' : 'none';
+                    });
+                }
+
+                function onCategoryChange() {
+                    var catId = document.getElementById('filterCategory').value;
+                    var type = document.getElementById('filterAssetType').value;
+                    var subSelect = document.getElementById('filterSubCategory');
+
+                    subSelect.value = '';
+                    var subOptions = subSelect.querySelectorAll('option[data-type]');
+                    subOptions.forEach(function(opt) {
+                        var matchType = !type || opt.getAttribute('data-type') === type;
+                        var matchCat = !catId || opt.getAttribute('data-category') === catId;
+                        opt.style.display = (matchType && matchCat) ? '' : 'none';
+                    });
+                }
+
+                // Apply cascading on page load to respect pre-selected filters
+                (function() {
+                    var type = document.getElementById('filterAssetType').value;
+                    var catId = document.getElementById('filterCategory').value;
+                    if (type) {
+                        var catOptions = document.getElementById('filterCategory').querySelectorAll('option[data-type]');
+                        catOptions.forEach(function(opt) {
+                            if (opt.getAttribute('data-type') !== type) opt.style.display = 'none';
+                        });
+                    }
+                    if (type || catId) {
+                        var subOptions = document.getElementById('filterSubCategory').querySelectorAll('option[data-type]');
+                        subOptions.forEach(function(opt) {
+                            var matchType = !type || opt.getAttribute('data-type') === type;
+                            var matchCat = !catId || opt.getAttribute('data-category') === catId;
+                            if (!(matchType && matchCat)) opt.style.display = 'none';
+                        });
+                    }
+                })();
+            </script>
         </div>
 
         <!-- Export Buttons -->

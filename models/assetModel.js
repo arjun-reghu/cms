@@ -39,7 +39,9 @@ const AssetModel = {
                     LEFT JOIN models mo ON a.model_id = mo.id
                     LEFT JOIN branches b ON a.branch_code = b.branch_code WHERE 1=1`;
         const params = [];
+        if (filters.channel_code) { sql += ' AND b.channel_code = ?'; params.push(filters.channel_code); }
         if (filters.branch_code) { sql += ' AND a.branch_code = ?'; params.push(filters.branch_code); }
+        if (filters.category_id) { sql += ' AND i.category_id = ?'; params.push(filters.category_id); }
         if (filters.item_id) { sql += ' AND a.item_id = ?'; params.push(filters.item_id); }
         if (filters.make_id) { sql += ' AND a.make_id = ?'; params.push(filters.make_id); }
         if (filters.status) { sql += ' AND a.status = ?'; params.push(filters.status); }
@@ -199,6 +201,34 @@ const AssetModel = {
     getTransferHistory: async (assetId) => {
         const [rows] = await db.query(
             'SELECT * FROM asset_transfer_history WHERE asset_id = ? ORDER BY transfer_date DESC', [assetId]
+        );
+        return rows;
+    },
+
+    // Get all stock (available) assets
+    findStock: async () => {
+        const [rows] = await db.query(
+            `SELECT a.id, a.asset_code, a.serial_number, a.branch_code, a.asset_type,
+             i.item_name, i.item_code, m.make_name, mo.model_name, b.branch_name
+             FROM assets a
+             LEFT JOIN items i ON a.item_id = i.id
+             LEFT JOIN makes m ON a.make_id = m.id
+             LEFT JOIN models mo ON a.model_id = mo.id
+             LEFT JOIN branches b ON a.branch_code = b.branch_code
+             WHERE a.status = 'stock'
+             ORDER BY i.item_name, a.asset_code`
+        );
+        return rows;
+    },
+
+    // Get all assigned assets grouped by employee
+    getAssignedByEmployee: async () => {
+        const [rows] = await db.query(
+            `SELECT ah.employee_code, a.asset_code, a.serial_number
+             FROM asset_history ah
+             JOIN assets a ON ah.asset_id = a.id
+             WHERE a.status = 'assigned'
+             ORDER BY ah.employee_code, a.asset_code`
         );
         return rows;
     }

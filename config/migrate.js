@@ -110,6 +110,37 @@ async function migrate() {
         }
         console.log('✔ Categories seeded.');
 
+        // 8. Ticket system: Add closed_at to tickets
+        try {
+            await conn.execute(`ALTER TABLE tickets ADD COLUMN closed_at DATETIME NULL`);
+            console.log('✔ Added closed_at column to tickets.');
+        } catch (e) {
+            if (e.code === 'ER_DUP_FIELDNAME') {
+                console.log('ℹ closed_at column already exists on tickets.');
+            } else { console.log('ℹ tickets.closed_at:', e.message); }
+        }
+
+        // 9. Ticket system: Add onboarding fields to ticket_details
+        const ticketDetailCols = [
+            ['employee_name', 'VARCHAR(100)'],
+            ['designation', 'VARCHAR(100)'],
+            ['department', 'VARCHAR(100)'],
+            ['reporting_to', 'VARCHAR(100)'],
+            ['contact_number', 'VARCHAR(20)'],
+            ['date_of_birth', 'DATE'],
+            ['branch_code', 'VARCHAR(50)']
+        ];
+        for (const [col, type] of ticketDetailCols) {
+            try {
+                await conn.execute(`ALTER TABLE ticket_details ADD COLUMN ${col} ${type}`);
+                console.log(`✔ Added ${col} to ticket_details.`);
+            } catch (e) {
+                if (e.code === 'ER_DUP_FIELDNAME') {
+                    console.log(`ℹ ${col} already exists on ticket_details.`);
+                } else { console.log(`ℹ ticket_details.${col}:`, e.message); }
+            }
+        }
+
         console.log('\n========================================');
         console.log('  Migration completed successfully!');
         console.log('========================================\n');

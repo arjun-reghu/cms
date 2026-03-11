@@ -33,6 +33,10 @@ const TicketModel = {
         return result;
     },
     updateStatus: async (id, status) => {
+        if (status === 'closed') {
+            const [result] = await db.query(`UPDATE tickets SET status = ?, closed_at = NOW() WHERE id = ?`, [status, id]);
+            return result;
+        }
         const [result] = await db.query(`UPDATE tickets SET status = ? WHERE id = ?`, [status, id]);
         return result;
     },
@@ -43,22 +47,26 @@ const TicketModel = {
     // Ticket Details
     getDetails: async (ticketId) => {
         const [rows] = await db.query(
-            `SELECT td.*, e.employee_name FROM ticket_details td LEFT JOIN employees e ON td.employee_code = e.employee_code WHERE td.ticket_id = ?`, [ticketId]
+            `SELECT td.*, e.employee_name as emp_name, e.email_id as emp_email, e.email_status as emp_email_status, e.ad_account_status as emp_ad_status
+             FROM ticket_details td
+             LEFT JOIN employees e ON td.employee_code = e.employee_code
+             WHERE td.ticket_id = ?`, [ticketId]
         );
         return rows;
     },
     addDetail: async (data) => {
         const [result] = await db.query(
-            `INSERT INTO ticket_details (ticket_id, employee_code, email_required, email_id, laptop_required, laptop_serial, bag_model, accessories, remarks)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [data.ticket_id, data.employee_code, data.email_required || 0, data.email_id, data.laptop_required || 0, data.laptop_serial, data.bag_model, data.accessories, data.remarks]
+            `INSERT INTO ticket_details (ticket_id, employee_code, email_required, email_id, laptop_required, laptop_serial, bag_model, accessories, remarks, employee_name, designation, department, reporting_to, contact_number, date_of_birth, branch_code)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [data.ticket_id, data.employee_code, data.email_required || 0, data.email_id || null, data.laptop_required || 0, data.laptop_serial || null, data.bag_model || null, data.accessories || null, data.remarks || null,
+            data.employee_name || null, data.designation || null, data.department || null, data.reporting_to || null, data.contact_number || null, data.date_of_birth || null, data.branch_code || null]
         );
         return result;
     },
     updateDetail: async (id, data) => {
         const [result] = await db.query(
             `UPDATE ticket_details SET email_id = ?, laptop_serial = ?, bag_model = ?, accessories = ?, remarks = ? WHERE id = ?`,
-            [data.email_id, data.laptop_serial, data.bag_model, data.accessories, data.remarks, id]
+            [data.email_id || null, data.laptop_serial || null, data.bag_model || null, data.accessories || null, data.remarks || null, id]
         );
         return result;
     },

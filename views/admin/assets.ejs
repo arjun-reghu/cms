@@ -109,9 +109,9 @@
                                                             <tr>
                                                                 <th>Branch Code</th>
                                                                 <th>Branch Name</th>
-                                                                <th>Asset Type</th>
                                                                 <th>Category</th>
                                                                 <th>Sub Category</th>
+                                                                <th>Asset Code</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
@@ -123,15 +123,14 @@
                                                                     <td>
                                                                         <%= a.branch_name || '-' %>
                                                                     </td>
-                                                                    <td><span
-                                                                            class="badge badge-<%= a.asset_type === 'IT' ? 'active' : 'assigned' %>">
-                                                                            <%= a.asset_type %>
-                                                                        </span></td>
                                                                     <td>
                                                                         <%= a.category_name || '-' %>
                                                                     </td>
                                                                     <td>
                                                                         <%= a.item_name || '-' %>
+                                                                    </td>
+                                                                    <td>
+                                                                        <%= a.asset_code || '-' %>
                                                                     </td>
                                                                 </tr>
                                                                 <% }) %>
@@ -314,28 +313,74 @@
                                                         <form action="/admin/assets/assign" method="POST">
                                                             <div class="form-row">
                                                                 <div class="form-group"><label>Employee</label>
-                                                                    <select name="employee_code" class="form-control"
-                                                                        required>
-                                                                        <option value="">Select Employee</option>
-                                                                        <% employees.forEach(e=> { %><option
-                                                                                value="<%= e.employee_code %>">
-                                                                                <%= e.employee_code %> - <%=
-                                                                                        e.employee_name %>
-                                                                            </option>
-                                                                            <% }) %>
-                                                                    </select>
+                                                                    <div class="searchable-select"
+                                                                        id="empSearchWrapper">
+                                                                        <input type="text" class="form-control"
+                                                                            id="empSearchInput"
+                                                                            placeholder="Type to search employee..."
+                                                                            autocomplete="off"
+                                                                            onfocus="showSearchDropdown('emp')"
+                                                                            oninput="filterSearchDropdown('emp')">
+                                                                        <input type="hidden" name="employee_code"
+                                                                            id="empSearchValue" required>
+                                                                        <div class="search-dropdown" id="empDropdown">
+                                                                            <% employees.forEach(function(e) { %>
+                                                                                <div class="search-dropdown-item"
+                                                                                    data-value="<%= e.employee_code %>"
+                                                                                    data-label="<%= e.employee_code %> - <%= e.employee_name %>"
+                                                                                    onclick="selectSearchItem('emp', this)">
+                                                                                    <%= e.employee_code %> - <%=
+                                                                                            e.employee_name %>
+                                                                                </div>
+                                                                                <% }) %>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                                 <div class="form-group"><label>Asset</label>
-                                                                    <select name="asset_id" class="form-control"
-                                                                        required>
-                                                                        <option value="">Select Asset</option>
-                                                                        <% assets.filter(a=> a.status ===
-                                                                            'stock').forEach(a => { %><option
-                                                                                value="<%= a.id %>">
-                                                                                <%= a.asset_code %> - <%= a.item_name %>
-                                                                            </option>
-                                                                            <% }) %>
-                                                                    </select>
+                                                                    <div class="searchable-select"
+                                                                        id="assetSearchWrapper">
+                                                                        <input type="text" class="form-control"
+                                                                            id="assetSearchInput"
+                                                                            placeholder="Type to search asset code..."
+                                                                            autocomplete="off"
+                                                                            onfocus="showSearchDropdown('asset')"
+                                                                            oninput="filterSearchDropdown('asset')">
+                                                                        <input type="hidden" name="asset_id"
+                                                                            id="assetSearchValue" required>
+                                                                        <div class="search-dropdown" id="assetDropdown">
+                                                                            <% assets.forEach(function(a) { %>
+                                                                                <div class="search-dropdown-item"
+                                                                                    data-value="<%= a.id %>"
+                                                                                    data-label="<%= a.asset_code %> - <%= a.item_name || '' %> - <%= a.serial_number || '' %>"
+                                                                                    data-status="<%= a.status %>"
+                                                                                    onclick="selectSearchItem('asset', this)">
+                                                                                    <strong>
+                                                                                        <%= a.asset_code %>
+                                                                                    </strong>
+                                                                                    <% if (a.item_name) { %> | <%=
+                                                                                            a.item_name %>
+                                                                                            <% } %>
+                                                                                                <% if (a.make_name) { %>
+                                                                                                    | <%= a.make_name %>
+                                                                                                        <% } %>
+                                                                                                            <% if
+                                                                                                                (a.serial_number)
+                                                                                                                { %> |
+                                                                                                                SN: <%=
+                                                                                                                    a.serial_number
+                                                                                                                    %>
+                                                                                                                    <% }
+                                                                                                                        %>
+                                                                                                                        <span
+                                                                                                                            class="badge badge-<%= a.status %>"
+                                                                                                                            style="margin-left:6px;font-size:0.7rem;">
+                                                                                                                            <%= a.status
+                                                                                                                                %>
+                                                                                                                        </span>
+                                                                                </div>
+                                                                                <% }) %>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                                 <div class="form-group"><label>Date</label><input
                                                                         type="date" name="assigned_date"
@@ -402,8 +447,8 @@
                                                         </div>
                                                     </div>
 
-                                                    <% } else { %>
-                                                        <!-- Branch Assets / Stock View -->
+                                                    <% } else if (view==='branch' ) { %>
+                                                        <!-- Branch Assets View -->
                                                         <div class="card">
                                                             <div class="action-bar" style="margin-bottom:0;">
                                                                 <div class="search-box"><i
@@ -416,137 +461,552 @@
                                                                 <table class="data-table" id="assetTable">
                                                                     <thead>
                                                                         <tr>
-                                                                            <th>Asset Code</th>
+                                                                            <th>Branch</th>
                                                                             <th>Category</th>
                                                                             <th>Sub Category</th>
                                                                             <th>Make</th>
                                                                             <th>Model</th>
                                                                             <th>Serial No</th>
-                                                                            <th>Branch</th>
-                                                                            <th>Type</th>
+                                                                            <th>Asset Code</th>
                                                                             <th>Status</th>
                                                                             <th>Actions</th>
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody>
-                                                                        <% let filteredAssets=assets; if (view==='stock'
-                                                                            ) filteredAssets=assets.filter(a=> a.status
-                                                                            === 'stock'); %>
-                                                                            <% filteredAssets.forEach(a=> { %>
-                                                                                <tr>
-                                                                                    <td><strong>
-                                                                                            <%= a.asset_code %>
-                                                                                        </strong></td>
-                                                                                    <td>
-                                                                                        <%= a.category_name || '-' %>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <%= a.item_name || '-' %>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <%= a.make_name || '-' %>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <%= a.model_name || '-' %>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <%= a.serial_number || '-' %>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <%= a.branch_name || '-' %>
-                                                                                    </td>
-                                                                                    <td><span
-                                                                                            class="badge badge-<%= a.asset_type === 'IT' ? 'active' : 'assigned' %>">
-                                                                                            <%= a.asset_type %>
-                                                                                        </span></td>
-                                                                                    <td><span
-                                                                                            class="badge badge-<%= a.status %>">
-                                                                                            <%= a.status %>
-                                                                                        </span></td>
-                                                                                    <td>
-                                                                                        <button
-                                                                                            class="btn btn-sm btn-outline"
-                                                                                            onclick="editAsset(<%- JSON.stringify(a) %>)"><i
-                                                                                                class="fas fa-edit"></i></button>
-                                                                                        <button
-                                                                                            class="btn btn-sm btn-warning"
-                                                                                            onclick="transferAsset(<%- JSON.stringify(a) %>)"><i
-                                                                                                class="fas fa-exchange-alt"></i></button>
-                                                                                        <form
-                                                                                            action="/admin/assets/delete/<%= a.id %>"
-                                                                                            method="POST"
-                                                                                            style="display:inline;"
-                                                                                            onsubmit="return confirmDelete('Delete this asset?')">
-                                                                                            <button type="submit"
-                                                                                                class="btn btn-sm btn-danger"><i
-                                                                                                    class="fas fa-trash"></i></button>
-                                                                                        </form>
-                                                                                    </td>
-                                                                                </tr>
-                                                                                <% }) %>
-                                                                                    <% if (filteredAssets.length===0) {
-                                                                                        %>
-                                                                                        <tr>
-                                                                                            <td colspan="10"
-                                                                                                class="empty-state"><i
-                                                                                                    class="fas fa-box-open"></i>
-                                                                                                <p>No assets found</p>
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                        <% } %>
+                                                                        <% assets.forEach(a=> { %>
+                                                                            <tr>
+                                                                                <td>
+                                                                                    <%= a.branch_name || '-' %>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <%= a.category_name || '-' %>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <%= a.item_name || '-' %>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <%= a.make_name || '-' %>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <%= a.model_name || '-' %>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <%= a.serial_number || '-' %>
+                                                                                </td>
+                                                                                <td><strong>
+                                                                                        <%= a.asset_code %>
+                                                                                    </strong></td>
+                                                                                <td><span
+                                                                                        class="badge badge-<%= a.status %>">
+                                                                                        <%= a.status %>
+                                                                                    </span></td>
+                                                                                <td>
+                                                                                    <button
+                                                                                        class="btn btn-sm btn-outline"
+                                                                                        onclick="editAsset(<%- JSON.stringify(a) %>)"><i
+                                                                                            class="fas fa-edit"></i></button>
+                                                                                    <button
+                                                                                        class="btn btn-sm btn-warning"
+                                                                                        onclick="transferAsset(<%- JSON.stringify(a) %>)"><i
+                                                                                            class="fas fa-exchange-alt"></i></button>
+                                                                                    <form
+                                                                                        action="/admin/assets/delete/<%= a.id %>"
+                                                                                        method="POST"
+                                                                                        style="display:inline;"
+                                                                                        onsubmit="return confirmDelete('Delete this asset?')">
+                                                                                        <button type="submit"
+                                                                                            class="btn btn-sm btn-danger"><i
+                                                                                                class="fas fa-trash"></i></button>
+                                                                                    </form>
+                                                                                </td>
+                                                                            </tr>
+                                                                            <% }) %>
+                                                                                <% if (assets.length===0) { %>
+                                                                                    <tr>
+                                                                                        <td colspan="9"
+                                                                                            class="empty-state"><i
+                                                                                                class="fas fa-box-open"></i>
+                                                                                            <p>No assets found</p>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                    <% } %>
                                                                     </tbody>
                                                                 </table>
                                                             </div>
                                                         </div>
-                                                        <% } %>
 
-                                                            <!-- Add Asset Modal -->
-                                                            <div class="modal-overlay" id="addAssetModal">
-                                                                <div class="modal">
-                                                                    <div class="modal-header">
-                                                                        <h3>Add New Asset</h3><button
-                                                                            class="modal-close"
-                                                                            onclick="closeModal('addAssetModal')">&times;</button>
+                                                        <% } else { %>
+                                                            <!-- Stock View -->
+                                                            <div class="card">
+                                                                <div class="action-bar" style="margin-bottom:0;">
+                                                                    <div class="search-box"><i
+                                                                            class="fas fa-search"></i><input type="text"
+                                                                            placeholder="Search stock assets..."
+                                                                            onkeyup="filterTable('stockTable', this.value)">
                                                                     </div>
-                                                                    <form action="/admin/assets" method="POST">
-                                                                        <input type="hidden" name="asset_code"
-                                                                            value="auto">
-                                                                        <div class="form-row">
-                                                                            <div class="form-group"><label>Asset Type
-                                                                                    *</label>
-                                                                                <select name="asset_type"
-                                                                                    class="form-control" required
-                                                                                    id="addAssetType"
-                                                                                    onchange="filterCategoriesForAdd()">
-                                                                                    <option value="IT">IT</option>
-                                                                                    <option value="ADMIN">Admin</option>
+                                                                </div>
+                                                                <div class="table-wrapper" style="margin-top:16px;">
+                                                                    <table class="data-table" id="stockTable">
+                                                                        <thead>
+                                                                            <tr>
+                                                                                <th>Category</th>
+                                                                                <th>Sub Category</th>
+                                                                                <th>Make</th>
+                                                                                <th>Model</th>
+                                                                                <th>Serial No</th>
+                                                                                <th>Asset Code</th>
+                                                                                <th>Status</th>
+                                                                                <th>Actions</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            <% let stockAssets=assets.filter(a=>
+                                                                                a.status === 'stock'); %>
+                                                                                <% stockAssets.forEach(a=> { %>
+                                                                                    <tr>
+                                                                                        <td>
+                                                                                            <%= a.category_name || '-'
+                                                                                                %>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <%= a.item_name || '-' %>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <%= a.make_name || '-' %>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <%= a.model_name || '-' %>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <%= a.serial_number || '-'
+                                                                                                %>
+                                                                                        </td>
+                                                                                        <td><strong>
+                                                                                                <%= a.asset_code %>
+                                                                                            </strong></td>
+                                                                                        <td><span
+                                                                                                class="badge badge-<%= a.status %>">
+                                                                                                <%= a.status %>
+                                                                                            </span></td>
+                                                                                        <td>
+                                                                                            <button
+                                                                                                class="btn btn-sm btn-outline"
+                                                                                                onclick="editAsset(<%- JSON.stringify(a) %>)"><i
+                                                                                                    class="fas fa-edit"></i></button>
+                                                                                            <button
+                                                                                                class="btn btn-sm btn-warning"
+                                                                                                onclick="transferAsset(<%- JSON.stringify(a) %>)"><i
+                                                                                                    class="fas fa-exchange-alt"></i></button>
+                                                                                            <form
+                                                                                                action="/admin/assets/delete/<%= a.id %>"
+                                                                                                method="POST"
+                                                                                                style="display:inline;"
+                                                                                                onsubmit="return confirmDelete('Delete this asset?')">
+                                                                                                <button type="submit"
+                                                                                                    class="btn btn-sm btn-danger"><i
+                                                                                                        class="fas fa-trash"></i></button>
+                                                                                            </form>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                    <% }) %>
+                                                                                        <% if (stockAssets.length===0) {
+                                                                                            %>
+                                                                                            <tr>
+                                                                                                <td colspan="8"
+                                                                                                    class="empty-state">
+                                                                                                    <i
+                                                                                                        class="fas fa-box-open"></i>
+                                                                                                    <p>No stock assets
+                                                                                                        found</p>
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                            <% } %>
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                            <% } %>
+
+                                                                <!-- Add Asset Modal -->
+                                                                <div class="modal-overlay" id="addAssetModal">
+                                                                    <div class="modal">
+                                                                        <div class="modal-header">
+                                                                            <h3>Add New Asset</h3><button
+                                                                                class="modal-close"
+                                                                                onclick="closeModal('addAssetModal')">&times;</button>
+                                                                        </div>
+                                                                        <form action="/admin/assets" method="POST">
+                                                                            <input type="hidden" name="asset_code"
+                                                                                value="auto">
+                                                                            <div class="form-row">
+                                                                                <div class="form-group"><label>Asset
+                                                                                        Type
+                                                                                        *</label>
+                                                                                    <select name="asset_type"
+                                                                                        class="form-control" required
+                                                                                        id="addAssetType"
+                                                                                        onchange="filterCategoriesForAdd()">
+                                                                                        <option value="IT">IT</option>
+                                                                                        <option value="ADMIN">Admin
+                                                                                        </option>
+                                                                                    </select>
+                                                                                </div>
+                                                                                <div class="form-group"
+                                                                                    id="addBranchGroup"><label>Branch
+                                                                                        <span
+                                                                                            id="branchRequiredStar">*</span></label>
+                                                                                    <select name="branch_code"
+                                                                                        class="form-control"
+                                                                                        id="addBranchSelect">
+                                                                                        <option value="">Select</option>
+                                                                                        <% branches.forEach(b=> { %>
+                                                                                            <option
+                                                                                                value="<%= b.branch_code %>"
+                                                                                                data-channel="<%= b.channel_code %>">
+                                                                                                <%= b.branch_code %> -
+                                                                                                    <%= b.branch_name %>
+                                                                                            </option>
+                                                                                            <% }) %>
+                                                                                    </select>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="form-row">
+                                                                                <div class="form-group">
+                                                                                    <label>Category</label>
+                                                                                    <select class="form-control"
+                                                                                        id="addCategorySelect"
+                                                                                        onchange="filterSubcatsForAdd()">
+                                                                                        <option value="">Select Category
+                                                                                        </option>
+                                                                                        <% categories.forEach(c=> { %>
+                                                                                            <option value="<%= c.id %>"
+                                                                                                data-type="<%= c.asset_type %>">
+                                                                                                <%= c.category_name %> (
+                                                                                                    <%= c.category_code
+                                                                                                        %>)
+                                                                                            </option>
+                                                                                            <% }) %>
+                                                                                    </select>
+                                                                                </div>
+                                                                                <div class="form-group"><label>Sub
+                                                                                        Category</label>
+                                                                                    <select name="item_id"
+                                                                                        class="form-control"
+                                                                                        id="addSubcatSelect">
+                                                                                        <option value="">Select</option>
+                                                                                        <% items.forEach(i=> { %><option
+                                                                                                value="<%= i.id %>"
+                                                                                                data-catid="<%= i.category_id %>">
+                                                                                                <%= i.item_name %> (<%=
+                                                                                                        i.item_code %>)
+                                                                                            </option>
+                                                                                            <% }) %>
+                                                                                    </select>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="form-row">
+                                                                                <div class="form-group">
+                                                                                    <label>Make</label>
+                                                                                    <select name="make_id"
+                                                                                        class="form-control">
+                                                                                        <option value="">Select</option>
+                                                                                        <% makes.forEach(m=> { %><option
+                                                                                                value="<%= m.id %>">
+                                                                                                <%= m.make_name %>
+                                                                                            </option>
+                                                                                            <% }) %>
+                                                                                    </select>
+                                                                                </div>
+                                                                                <div class="form-group">
+                                                                                    <label>Model</label>
+                                                                                    <select name="model_id"
+                                                                                        class="form-control">
+                                                                                        <option value="">Select</option>
+                                                                                        <% models.forEach(m=> { %>
+                                                                                            <option value="<%= m.id %>">
+                                                                                                <%= m.model_name %> (<%=
+                                                                                                        m.make_name %>)
+                                                                                            </option>
+                                                                                            <% }) %>
+                                                                                    </select>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="form-row">
+                                                                                <div class="form-group"><label>Serial
+                                                                                        Number</label><input type="text"
+                                                                                        name="serial_number"
+                                                                                        class="form-control"></div>
+                                                                                <div class="form-group">
+                                                                                    <label>Count</label><input
+                                                                                        type="number" name="count"
+                                                                                        class="form-control" value="1"
+                                                                                        min="1">
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="form-group">
+                                                                                <label>Status</label>
+                                                                                <select name="status"
+                                                                                    class="form-control">
+                                                                                    <option value="stock">Stock</option>
+                                                                                    <option value="assigned">Assigned
+                                                                                    </option>
+                                                                                    <option value="scrap">Scrap</option>
                                                                                 </select>
                                                                             </div>
-                                                                            <div class="form-group"><label>Branch
+                                                                            <p
+                                                                                style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px;">
+                                                                                <i class="fas fa-info-circle"></i> Asset
+                                                                                code will be auto-generated based on
+                                                                                type,
+                                                                                branch, and subcategory.
+                                                                            </p>
+                                                                            <div style="display:flex;gap:12px;">
+                                                                                <button type="submit"
+                                                                                    class="btn btn-primary"><i
+                                                                                        class="fas fa-save"></i> Save
+                                                                                    Asset</button>
+                                                                                <button type="button"
+                                                                                    class="btn btn-outline"
+                                                                                    onclick="closeModal('addAssetModal')"><i
+                                                                                        class="fas fa-times"></i>
+                                                                                    Discard</button>
+                                                                            </div>
+                                                                        </form>
+                                                                    </div>
+                                                                </div>
+
+                                                                <!-- Edit Asset Modal -->
+                                                                <div class="modal-overlay" id="editAssetModal">
+                                                                    <div class="modal">
+                                                                        <div class="modal-header">
+                                                                            <h3>Edit Asset</h3><button
+                                                                                class="modal-close"
+                                                                                onclick="closeModal('editAssetModal')">&times;</button>
+                                                                        </div>
+                                                                        <form id="editAssetForm" method="POST">
+                                                                            <div class="form-row">
+                                                                                <div class="form-group"><label>Asset
+                                                                                        Code</label><input type="text"
+                                                                                        class="form-control"
+                                                                                        id="ea_asset_code" disabled>
+                                                                                </div>
+                                                                                <div class="form-group"><label>Asset
+                                                                                        Type</label>
+                                                                                    <select name="asset_type"
+                                                                                        class="form-control"
+                                                                                        id="ea_asset_type">
+                                                                                        <option value="IT">IT</option>
+                                                                                        <option value="ADMIN">Admin
+                                                                                        </option>
+                                                                                    </select>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="form-row">
+                                                                                <div class="form-group">
+                                                                                    <label>Category</label>
+                                                                                    <select name="item_id"
+                                                                                        class="form-control"
+                                                                                        id="ea_item_id">
+                                                                                        <option value="">Select</option>
+                                                                                        <% items.forEach(i=> { %><option
+                                                                                                value="<%= i.id %>">
+                                                                                                <%= i.item_name %>
+                                                                                            </option>
+                                                                                            <% }) %>
+                                                                                    </select>
+                                                                                </div>
+                                                                                <div class="form-group">
+                                                                                    <label>Branch</label>
+                                                                                    <select name="branch_code"
+                                                                                        class="form-control"
+                                                                                        id="ea_branch_code">
+                                                                                        <option value="">Select</option>
+                                                                                        <% branches.forEach(b=> { %>
+                                                                                            <option
+                                                                                                value="<%= b.branch_code %>">
+                                                                                                <%= b.branch_code %>
+                                                                                            </option>
+                                                                                            <% }) %>
+                                                                                    </select>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="form-row">
+                                                                                <div class="form-group">
+                                                                                    <label>Make</label>
+                                                                                    <select name="make_id"
+                                                                                        class="form-control"
+                                                                                        id="ea_make_id">
+                                                                                        <option value="">Select</option>
+                                                                                        <% makes.forEach(m=> { %><option
+                                                                                                value="<%= m.id %>">
+                                                                                                <%= m.make_name %>
+                                                                                            </option>
+                                                                                            <% }) %>
+                                                                                    </select>
+                                                                                </div>
+                                                                                <div class="form-group">
+                                                                                    <label>Model</label>
+                                                                                    <select name="model_id"
+                                                                                        class="form-control"
+                                                                                        id="ea_model_id">
+                                                                                        <option value="">Select</option>
+                                                                                        <% models.forEach(m=> { %>
+                                                                                            <option value="<%= m.id %>">
+                                                                                                <%= m.model_name %>
+                                                                                            </option>
+                                                                                            <% }) %>
+                                                                                    </select>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="form-row">
+                                                                                <div class="form-group"><label>Serial
+                                                                                        Number</label><input type="text"
+                                                                                        name="serial_number"
+                                                                                        class="form-control"
+                                                                                        id="ea_serial_number"></div>
+                                                                                <div class="form-group">
+                                                                                    <label>Count</label><input
+                                                                                        type="number" name="count"
+                                                                                        class="form-control"
+                                                                                        id="ea_count" min="1">
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="form-group">
+                                                                                <label>Status</label>
+                                                                                <select name="status"
+                                                                                    class="form-control" id="ea_status">
+                                                                                    <option value="stock">Stock</option>
+                                                                                    <option value="assigned">Assigned
+                                                                                    </option>
+                                                                                    <option value="scrap">Scrap</option>
+                                                                                </select>
+                                                                            </div>
+                                                                            <div style="display:flex;gap:12px;">
+                                                                                <button type="submit"
+                                                                                    class="btn btn-primary"><i
+                                                                                        class="fas fa-save"></i> Update
+                                                                                    Asset</button>
+                                                                                <button type="button"
+                                                                                    class="btn btn-outline"
+                                                                                    onclick="closeModal('editAssetModal')"><i
+                                                                                        class="fas fa-times"></i>
+                                                                                    Discard</button>
+                                                                            </div>
+                                                                        </form>
+                                                                    </div>
+                                                                </div>
+
+                                                                <!-- Transfer Asset Modal -->
+                                                                <div class="modal-overlay" id="transferModal">
+                                                                    <div class="modal">
+                                                                        <div class="modal-header">
+                                                                            <h3>Transfer Asset</h3><button
+                                                                                class="modal-close"
+                                                                                onclick="closeModal('transferModal')">&times;</button>
+                                                                        </div>
+                                                                        <form action="/admin/assets/transfer"
+                                                                            method="POST">
+                                                                            <input type="hidden" name="asset_id"
+                                                                                id="tr_asset_id">
+                                                                            <input type="hidden" name="from_branch"
+                                                                                id="tr_from_branch">
+                                                                            <div class="form-group">
+                                                                                <label>Asset</label><input type="text"
+                                                                                    class="form-control"
+                                                                                    id="tr_asset_code" disabled>
+                                                                            </div>
+                                                                            <div class="form-group"><label>From
+                                                                                    Branch</label><input type="text"
+                                                                                    class="form-control"
+                                                                                    id="tr_from_display" disabled></div>
+                                                                            <div class="form-group"><label>To Branch
                                                                                     *</label>
-                                                                                <select name="branch_code"
+                                                                                <select name="to_branch"
                                                                                     class="form-control" required>
                                                                                     <option value="">Select</option>
                                                                                     <% branches.forEach(b=> { %><option
-                                                                                            value="<%= b.branch_code %>"
-                                                                                            data-channel="<%= b.channel_code %>">
+                                                                                            value="<%= b.branch_code %>">
                                                                                             <%= b.branch_code %> - <%=
                                                                                                     b.branch_name %>
                                                                                         </option>
                                                                                         <% }) %>
                                                                                 </select>
                                                                             </div>
-                                                                        </div>
-                                                                        <div class="form-row">
                                                                             <div class="form-group">
-                                                                                <label>Category</label>
-                                                                                <select class="form-control"
-                                                                                    id="addCategorySelect"
-                                                                                    onchange="filterSubcatsForAdd()">
+                                                                                <label>Remarks</label><input type="text"
+                                                                                    name="remarks" class="form-control">
+                                                                            </div>
+                                                                            <button type="submit"
+                                                                                class="btn btn-warning"><i
+                                                                                    class="fas fa-exchange-alt"></i>
+                                                                                Transfer</button>
+                                                                        </form>
+                                                                    </div>
+                                                                </div>
+
+                                                                <!-- Add Category Modal -->
+                                                                <div class="modal-overlay" id="addCategoryModal">
+                                                                    <div class="modal">
+                                                                        <div class="modal-header">
+                                                                            <h3>Add Category</h3><button
+                                                                                class="modal-close"
+                                                                                onclick="closeModal('addCategoryModal')">&times;</button>
+                                                                        </div>
+                                                                        <form action="/admin/assets/category"
+                                                                            method="POST">
+                                                                            <div class="form-group"><label>Category Name
+                                                                                    *</label><input type="text"
+                                                                                    name="category_name"
+                                                                                    class="form-control" required></div>
+                                                                            <div class="form-group"><label>Category Code
+                                                                                    *</label><input type="text"
+                                                                                    name="category_code"
+                                                                                    class="form-control" required
+                                                                                    placeholder="e.g. COMP, NET, FF">
+                                                                            </div>
+                                                                            <div class="form-group"><label>Asset Type
+                                                                                    *</label>
+                                                                                <select name="asset_type"
+                                                                                    class="form-control" required>
+                                                                                    <option value="IT">IT</option>
+                                                                                    <option value="ADMIN">Admin</option>
+                                                                                </select>
+                                                                            </div>
+                                                                            <div style="display:flex;gap:12px;">
+                                                                                <button type="submit"
+                                                                                    class="btn btn-primary"><i
+                                                                                        class="fas fa-save"></i>
+                                                                                    Save</button>
+                                                                                <button type="button"
+                                                                                    class="btn btn-outline"
+                                                                                    onclick="closeModal('addCategoryModal')"><i
+                                                                                        class="fas fa-times"></i>
+                                                                                    Discard</button>
+                                                                            </div>
+                                                                        </form>
+                                                                    </div>
+                                                                </div>
+
+                                                                <!-- Add Item (Subcategory) Modal -->
+                                                                <div class="modal-overlay" id="addItemModal">
+                                                                    <div class="modal">
+                                                                        <div class="modal-header">
+                                                                            <h3>Add Sub Category</h3><button
+                                                                                class="modal-close"
+                                                                                onclick="closeModal('addItemModal')">&times;</button>
+                                                                        </div>
+                                                                        <form action="/admin/assets/item" method="POST">
+                                                                            <div class="form-group"><label>Category
+                                                                                    *</label>
+                                                                                <select name="category_id"
+                                                                                    class="form-control" required
+                                                                                    id="itemCategorySelect"
+                                                                                    onchange="autoGenerateSubcatCode()">
                                                                                     <option value="">Select Category
                                                                                     </option>
                                                                                     <% categories.forEach(c=> { %>
                                                                                         <option value="<%= c.id %>"
+                                                                                            data-code="<%= c.category_code %>"
                                                                                             data-type="<%= c.asset_type %>">
                                                                                             <%= c.category_name %> (<%=
                                                                                                     c.category_code %>)
@@ -554,142 +1014,80 @@
                                                                                         <% }) %>
                                                                                 </select>
                                                                             </div>
-                                                                            <div class="form-group"><label>Sub
-                                                                                    Category</label>
-                                                                                <select name="item_id"
-                                                                                    class="form-control"
-                                                                                    id="addSubcatSelect">
-                                                                                    <option value="">Select</option>
-                                                                                    <% items.forEach(i=> { %><option
-                                                                                            value="<%= i.id %>"
-                                                                                            data-catid="<%= i.category_id %>">
-                                                                                            <%= i.item_name %> (<%=
-                                                                                                    i.item_code %>)
-                                                                                        </option>
-                                                                                        <% }) %>
-                                                                                </select>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div class="form-row">
-                                                                            <div class="form-group"><label>Make</label>
-                                                                                <select name="make_id"
-                                                                                    class="form-control">
-                                                                                    <option value="">Select</option>
-                                                                                    <% makes.forEach(m=> { %><option
-                                                                                            value="<%= m.id %>">
-                                                                                            <%= m.make_name %>
-                                                                                        </option>
-                                                                                        <% }) %>
-                                                                                </select>
-                                                                            </div>
-                                                                            <div class="form-group"><label>Model</label>
-                                                                                <select name="model_id"
-                                                                                    class="form-control">
-                                                                                    <option value="">Select</option>
-                                                                                    <% models.forEach(m=> { %><option
-                                                                                            value="<%= m.id %>">
-                                                                                            <%= m.model_name %> (<%=
-                                                                                                    m.make_name %>)
-                                                                                        </option>
-                                                                                        <% }) %>
-                                                                                </select>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div class="form-row">
-                                                                            <div class="form-group"><label>Serial
-                                                                                    Number</label><input type="text"
-                                                                                    name="serial_number"
-                                                                                    class="form-control"></div>
-                                                                            <div class="form-group">
-                                                                                <label>Count</label><input type="number"
-                                                                                    name="count" class="form-control"
-                                                                                    value="1" min="1"></div>
-                                                                        </div>
-                                                                        <div class="form-group"><label>Status</label>
-                                                                            <select name="status" class="form-control">
-                                                                                <option value="stock">Stock</option>
-                                                                                <option value="assigned">Assigned
-                                                                                </option>
-                                                                                <option value="scrap">Scrap</option>
-                                                                            </select>
-                                                                        </div>
-                                                                        <p
-                                                                            style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px;">
-                                                                            <i class="fas fa-info-circle"></i> Asset
-                                                                            code will be auto-generated based on type,
-                                                                            branch, and subcategory.
-                                                                        </p>
-                                                                        <div style="display:flex;gap:12px;">
-                                                                            <button type="submit"
-                                                                                class="btn btn-primary"><i
-                                                                                    class="fas fa-save"></i> Save
-                                                                                Asset</button>
-                                                                            <button type="button"
-                                                                                class="btn btn-outline"
-                                                                                onclick="closeModal('addAssetModal')"><i
-                                                                                    class="fas fa-times"></i>
-                                                                                Discard</button>
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
-
-                                                            <!-- Edit Asset Modal -->
-                                                            <div class="modal-overlay" id="editAssetModal">
-                                                                <div class="modal">
-                                                                    <div class="modal-header">
-                                                                        <h3>Edit Asset</h3><button class="modal-close"
-                                                                            onclick="closeModal('editAssetModal')">&times;</button>
-                                                                    </div>
-                                                                    <form id="editAssetForm" method="POST">
-                                                                        <div class="form-row">
-                                                                            <div class="form-group"><label>Asset
+                                                                            <div class="form-group"><label>Sub Category
+                                                                                    Name
+                                                                                    *</label><input type="text"
+                                                                                    name="item_name"
+                                                                                    class="form-control" required></div>
+                                                                            <div class="form-group"><label>Sub Category
                                                                                     Code</label><input type="text"
+                                                                                    name="item_code"
                                                                                     class="form-control"
-                                                                                    id="ea_asset_code" disabled></div>
-                                                                            <div class="form-group"><label>Asset
-                                                                                    Type</label>
-                                                                                <select name="asset_type"
-                                                                                    class="form-control"
-                                                                                    id="ea_asset_type">
-                                                                                    <option value="IT">IT</option>
-                                                                                    <option value="ADMIN">Admin</option>
-                                                                                </select>
+                                                                                    id="autoSubcatCode"
+                                                                                    placeholder="Auto-generated from category code">
+                                                                                <small
+                                                                                    style="color:var(--text-muted);">Leave
+                                                                                    blank to auto-generate (e.g.,
+                                                                                    FF0001)</small>
                                                                             </div>
+                                                                            <input type="hidden" name="asset_type"
+                                                                                id="itemAssetType" value="IT">
+                                                                            <div style="display:flex;gap:12px;">
+                                                                                <button type="submit"
+                                                                                    class="btn btn-primary"><i
+                                                                                        class="fas fa-save"></i>
+                                                                                    Save</button>
+                                                                                <button type="button"
+                                                                                    class="btn btn-outline"
+                                                                                    onclick="closeModal('addItemModal')"><i
+                                                                                        class="fas fa-times"></i>
+                                                                                    Discard</button>
+                                                                            </div>
+                                                                        </form>
+                                                                    </div>
+                                                                </div>
+
+                                                                <!-- Add Make Modal -->
+                                                                <div class="modal-overlay" id="addMakeModal">
+                                                                    <div class="modal">
+                                                                        <div class="modal-header">
+                                                                            <h3>Add Make</h3><button class="modal-close"
+                                                                                onclick="closeModal('addMakeModal')">&times;</button>
                                                                         </div>
-                                                                        <div class="form-row">
-                                                                            <div class="form-group">
-                                                                                <label>Category</label>
-                                                                                <select name="item_id"
-                                                                                    class="form-control"
-                                                                                    id="ea_item_id">
-                                                                                    <option value="">Select</option>
-                                                                                    <% items.forEach(i=> { %><option
-                                                                                            value="<%= i.id %>">
-                                                                                            <%= i.item_name %>
-                                                                                        </option>
-                                                                                        <% }) %>
-                                                                                </select>
+                                                                        <form action="/admin/assets/make" method="POST">
+                                                                            <div class="form-group"><label>Make Name
+                                                                                    *</label><input type="text"
+                                                                                    name="make_name"
+                                                                                    class="form-control" required></div>
+                                                                            <div style="display:flex;gap:12px;">
+                                                                                <button type="submit"
+                                                                                    class="btn btn-primary"><i
+                                                                                        class="fas fa-save"></i>
+                                                                                    Save</button>
+                                                                                <button type="button"
+                                                                                    class="btn btn-outline"
+                                                                                    onclick="closeModal('addMakeModal')"><i
+                                                                                        class="fas fa-times"></i>
+                                                                                    Discard</button>
                                                                             </div>
-                                                                            <div class="form-group">
-                                                                                <label>Branch</label>
-                                                                                <select name="branch_code"
-                                                                                    class="form-control"
-                                                                                    id="ea_branch_code">
-                                                                                    <option value="">Select</option>
-                                                                                    <% branches.forEach(b=> { %><option
-                                                                                            value="<%= b.branch_code %>">
-                                                                                            <%= b.branch_code %>
-                                                                                        </option>
-                                                                                        <% }) %>
-                                                                                </select>
-                                                                            </div>
+                                                                        </form>
+                                                                    </div>
+                                                                </div>
+
+                                                                <!-- Add Model Modal -->
+                                                                <div class="modal-overlay" id="addModelModal">
+                                                                    <div class="modal">
+                                                                        <div class="modal-header">
+                                                                            <h3>Add Model</h3><button
+                                                                                class="modal-close"
+                                                                                onclick="closeModal('addModelModal')">&times;</button>
                                                                         </div>
-                                                                        <div class="form-row">
-                                                                            <div class="form-group"><label>Make</label>
+                                                                        <form action="/admin/assets/model"
+                                                                            method="POST">
+                                                                            <div class="form-group"><label>Make
+                                                                                    *</label>
                                                                                 <select name="make_id"
-                                                                                    class="form-control"
-                                                                                    id="ea_make_id">
+                                                                                    class="form-control" required>
                                                                                     <option value="">Select</option>
                                                                                     <% makes.forEach(m=> { %><option
                                                                                             value="<%= m.id %>">
@@ -698,324 +1096,188 @@
                                                                                         <% }) %>
                                                                                 </select>
                                                                             </div>
-                                                                            <div class="form-group"><label>Model</label>
-                                                                                <select name="model_id"
-                                                                                    class="form-control"
-                                                                                    id="ea_model_id">
-                                                                                    <option value="">Select</option>
-                                                                                    <% models.forEach(m=> { %><option
-                                                                                            value="<%= m.id %>">
-                                                                                            <%= m.model_name %>
-                                                                                        </option>
-                                                                                        <% }) %>
-                                                                                </select>
+                                                                            <div class="form-group"><label>Model Name
+                                                                                    *</label><input type="text"
+                                                                                    name="model_name"
+                                                                                    class="form-control" required></div>
+                                                                            <div style="display:flex;gap:12px;">
+                                                                                <button type="submit"
+                                                                                    class="btn btn-primary"><i
+                                                                                        class="fas fa-save"></i>
+                                                                                    Save</button>
+                                                                                <button type="button"
+                                                                                    class="btn btn-outline"
+                                                                                    onclick="closeModal('addModelModal')"><i
+                                                                                        class="fas fa-times"></i>
+                                                                                    Discard</button>
                                                                             </div>
-                                                                        </div>
-                                                                        <div class="form-row">
-                                                                            <div class="form-group"><label>Serial
-                                                                                    Number</label><input type="text"
-                                                                                    name="serial_number"
-                                                                                    class="form-control"
-                                                                                    id="ea_serial_number"></div>
-                                                                            <div class="form-group">
-                                                                                <label>Count</label><input type="number"
-                                                                                    name="count" class="form-control"
-                                                                                    id="ea_count" min="1"></div>
-                                                                        </div>
-                                                                        <div class="form-group"><label>Status</label>
-                                                                            <select name="status" class="form-control"
-                                                                                id="ea_status">
-                                                                                <option value="stock">Stock</option>
-                                                                                <option value="assigned">Assigned
-                                                                                </option>
-                                                                                <option value="scrap">Scrap</option>
-                                                                            </select>
-                                                                        </div>
-                                                                        <div style="display:flex;gap:12px;">
-                                                                            <button type="submit"
-                                                                                class="btn btn-primary"><i
-                                                                                    class="fas fa-save"></i> Update
-                                                                                Asset</button>
-                                                                            <button type="button"
-                                                                                class="btn btn-outline"
-                                                                                onclick="closeModal('editAssetModal')"><i
-                                                                                    class="fas fa-times"></i>
-                                                                                Discard</button>
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
-
-                                                            <!-- Transfer Asset Modal -->
-                                                            <div class="modal-overlay" id="transferModal">
-                                                                <div class="modal">
-                                                                    <div class="modal-header">
-                                                                        <h3>Transfer Asset</h3><button
-                                                                            class="modal-close"
-                                                                            onclick="closeModal('transferModal')">&times;</button>
+                                                                        </form>
                                                                     </div>
-                                                                    <form action="/admin/assets/transfer" method="POST">
-                                                                        <input type="hidden" name="asset_id"
-                                                                            id="tr_asset_id">
-                                                                        <input type="hidden" name="from_branch"
-                                                                            id="tr_from_branch">
-                                                                        <div class="form-group">
-                                                                            <label>Asset</label><input type="text"
-                                                                                class="form-control" id="tr_asset_code"
-                                                                                disabled></div>
-                                                                        <div class="form-group"><label>From
-                                                                                Branch</label><input type="text"
-                                                                                class="form-control"
-                                                                                id="tr_from_display" disabled></div>
-                                                                        <div class="form-group"><label>To Branch
-                                                                                *</label>
-                                                                            <select name="to_branch"
-                                                                                class="form-control" required>
-                                                                                <option value="">Select</option>
-                                                                                <% branches.forEach(b=> { %><option
-                                                                                        value="<%= b.branch_code %>">
-                                                                                        <%= b.branch_code %> - <%=
-                                                                                                b.branch_name %>
-                                                                                    </option>
-                                                                                    <% }) %>
-                                                                            </select>
-                                                                        </div>
-                                                                        <div class="form-group">
-                                                                            <label>Remarks</label><input type="text"
-                                                                                name="remarks" class="form-control">
-                                                                        </div>
-                                                                        <button type="submit" class="btn btn-warning"><i
-                                                                                class="fas fa-exchange-alt"></i>
-                                                                            Transfer</button>
-                                                                    </form>
                                                                 </div>
-                                                            </div>
 
-                                                            <!-- Add Category Modal -->
-                                                            <div class="modal-overlay" id="addCategoryModal">
-                                                                <div class="modal">
-                                                                    <div class="modal-header">
-                                                                        <h3>Add Category</h3><button class="modal-close"
-                                                                            onclick="closeModal('addCategoryModal')">&times;</button>
-                                                                    </div>
-                                                                    <form action="/admin/assets/category" method="POST">
-                                                                        <div class="form-group"><label>Category Name
-                                                                                *</label><input type="text"
-                                                                                name="category_name"
-                                                                                class="form-control" required></div>
-                                                                        <div class="form-group"><label>Category Code
-                                                                                *</label><input type="text"
-                                                                                name="category_code"
-                                                                                class="form-control" required
-                                                                                placeholder="e.g. COMP, NET, FF"></div>
-                                                                        <div class="form-group"><label>Asset Type
-                                                                                *</label>
-                                                                            <select name="asset_type"
-                                                                                class="form-control" required>
-                                                                                <option value="IT">IT</option>
-                                                                                <option value="ADMIN">Admin</option>
-                                                                            </select>
-                                                                        </div>
-                                                                        <div style="display:flex;gap:12px;">
-                                                                            <button type="submit"
-                                                                                class="btn btn-primary"><i
-                                                                                    class="fas fa-save"></i>
-                                                                                Save</button>
-                                                                            <button type="button"
-                                                                                class="btn btn-outline"
-                                                                                onclick="closeModal('addCategoryModal')"><i
-                                                                                    class="fas fa-times"></i>
-                                                                                Discard</button>
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
-
-                                                            <!-- Add Item (Subcategory) Modal -->
-                                                            <div class="modal-overlay" id="addItemModal">
-                                                                <div class="modal">
-                                                                    <div class="modal-header">
-                                                                        <h3>Add Sub Category</h3><button
-                                                                            class="modal-close"
-                                                                            onclick="closeModal('addItemModal')">&times;</button>
-                                                                    </div>
-                                                                    <form action="/admin/assets/item" method="POST">
-                                                                        <div class="form-group"><label>Category
-                                                                                *</label>
-                                                                            <select name="category_id"
-                                                                                class="form-control" required
-                                                                                id="itemCategorySelect"
-                                                                                onchange="autoGenerateSubcatCode()">
-                                                                                <option value="">Select Category
-                                                                                </option>
-                                                                                <% categories.forEach(c=> { %><option
-                                                                                        value="<%= c.id %>"
-                                                                                        data-code="<%= c.category_code %>"
-                                                                                        data-type="<%= c.asset_type %>">
-                                                                                        <%= c.category_name %> (<%=
-                                                                                                c.category_code %>)
-                                                                                    </option>
-                                                                                    <% }) %>
-                                                                            </select>
-                                                                        </div>
-                                                                        <div class="form-group"><label>Sub Category Name
-                                                                                *</label><input type="text"
-                                                                                name="item_name" class="form-control"
-                                                                                required></div>
-                                                                        <div class="form-group"><label>Sub Category
-                                                                                Code</label><input type="text"
-                                                                                name="item_code" class="form-control"
-                                                                                id="autoSubcatCode"
-                                                                                placeholder="Auto-generated from category code">
-                                                                            <small
-                                                                                style="color:var(--text-muted);">Leave
-                                                                                blank to auto-generate (e.g.,
-                                                                                FF0001)</small>
-                                                                        </div>
-                                                                        <input type="hidden" name="asset_type"
-                                                                            id="itemAssetType" value="IT">
-                                                                        <div style="display:flex;gap:12px;">
-                                                                            <button type="submit"
-                                                                                class="btn btn-primary"><i
-                                                                                    class="fas fa-save"></i>
-                                                                                Save</button>
-                                                                            <button type="button"
-                                                                                class="btn btn-outline"
-                                                                                onclick="closeModal('addItemModal')"><i
-                                                                                    class="fas fa-times"></i>
-                                                                                Discard</button>
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
-
-                                                            <!-- Add Make Modal -->
-                                                            <div class="modal-overlay" id="addMakeModal">
-                                                                <div class="modal">
-                                                                    <div class="modal-header">
-                                                                        <h3>Add Make</h3><button class="modal-close"
-                                                                            onclick="closeModal('addMakeModal')">&times;</button>
-                                                                    </div>
-                                                                    <form action="/admin/assets/make" method="POST">
-                                                                        <div class="form-group"><label>Make Name
-                                                                                *</label><input type="text"
-                                                                                name="make_name" class="form-control"
-                                                                                required></div>
-                                                                        <div style="display:flex;gap:12px;">
-                                                                            <button type="submit"
-                                                                                class="btn btn-primary"><i
-                                                                                    class="fas fa-save"></i>
-                                                                                Save</button>
-                                                                            <button type="button"
-                                                                                class="btn btn-outline"
-                                                                                onclick="closeModal('addMakeModal')"><i
-                                                                                    class="fas fa-times"></i>
-                                                                                Discard</button>
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
-
-                                                            <!-- Add Model Modal -->
-                                                            <div class="modal-overlay" id="addModelModal">
-                                                                <div class="modal">
-                                                                    <div class="modal-header">
-                                                                        <h3>Add Model</h3><button class="modal-close"
-                                                                            onclick="closeModal('addModelModal')">&times;</button>
-                                                                    </div>
-                                                                    <form action="/admin/assets/model" method="POST">
-                                                                        <div class="form-group"><label>Make *</label>
-                                                                            <select name="make_id" class="form-control"
-                                                                                required>
-                                                                                <option value="">Select</option>
-                                                                                <% makes.forEach(m=> { %><option
-                                                                                        value="<%= m.id %>">
-                                                                                        <%= m.make_name %>
-                                                                                    </option>
-                                                                                    <% }) %>
-                                                                            </select>
-                                                                        </div>
-                                                                        <div class="form-group"><label>Model Name
-                                                                                *</label><input type="text"
-                                                                                name="model_name" class="form-control"
-                                                                                required></div>
-                                                                        <div style="display:flex;gap:12px;">
-                                                                            <button type="submit"
-                                                                                class="btn btn-primary"><i
-                                                                                    class="fas fa-save"></i>
-                                                                                Save</button>
-                                                                            <button type="button"
-                                                                                class="btn btn-outline"
-                                                                                onclick="closeModal('addModelModal')"><i
-                                                                                    class="fas fa-times"></i>
-                                                                                Discard</button>
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
-
-                                                            <script>
-                                                                function openModal(id) { document.getElementById(id).classList.add('active'); }
-                                                                function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-                                                                function editAsset(a) {
-                                                                    document.getElementById('editAssetForm').action = '/admin/assets/update/' + a.id;
-                                                                    document.getElementById('ea_asset_code').value = a.asset_code;
-                                                                    document.getElementById('ea_asset_type').value = a.asset_type;
-                                                                    document.getElementById('ea_item_id').value = a.item_id || '';
-                                                                    document.getElementById('ea_branch_code').value = a.branch_code || '';
-                                                                    document.getElementById('ea_make_id').value = a.make_id || '';
-                                                                    document.getElementById('ea_model_id').value = a.model_id || '';
-                                                                    document.getElementById('ea_serial_number').value = a.serial_number || '';
-                                                                    document.getElementById('ea_count').value = a.count || 1;
-                                                                    document.getElementById('ea_status').value = a.status;
-                                                                    openModal('editAssetModal');
-                                                                }
-
-                                                                function transferAsset(a) {
-                                                                    document.getElementById('tr_asset_id').value = a.id;
-                                                                    document.getElementById('tr_asset_code').value = a.asset_code;
-                                                                    document.getElementById('tr_from_branch').value = a.branch_code || '';
-                                                                    document.getElementById('tr_from_display').value = a.branch_code ? a.branch_code + ' - ' + (a.branch_name || '') : 'N/A';
-                                                                    openModal('transferModal');
-                                                                }
-
-                                                                function filterTable(tableId, query) {
-                                                                    const rows = document.getElementById(tableId).querySelectorAll('tbody tr');
-                                                                    query = query.toLowerCase();
-                                                                    rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none'; });
-                                                                }
-
-                                                                // Filter categories by selected asset type
-                                                                function filterCategoriesForAdd() {
-                                                                    const type = document.getElementById('addAssetType').value;
-                                                                    const catSelect = document.getElementById('addCategorySelect');
-                                                                    const opts = catSelect.querySelectorAll('option[data-type]');
-                                                                    opts.forEach(o => { o.style.display = o.dataset.type === type ? '' : 'none'; });
-                                                                    catSelect.value = '';
-                                                                    filterSubcatsForAdd();
-                                                                }
-
-                                                                // Filter subcategories by selected category  
-                                                                function filterSubcatsForAdd() {
-                                                                    const catId = document.getElementById('addCategorySelect').value;
-                                                                    const subSelect = document.getElementById('addSubcatSelect');
-                                                                    const opts = subSelect.querySelectorAll('option[data-catid]');
-                                                                    opts.forEach(o => {
-                                                                        if (!catId) { o.style.display = ''; }
-                                                                        else { o.style.display = o.dataset.catid === catId ? '' : 'none'; }
-                                                                    });
-                                                                    subSelect.value = '';
-                                                                }
-
-                                                                // Auto-set asset_type when category is selected in subcategory form
-                                                                function autoGenerateSubcatCode() {
-                                                                    const sel = document.getElementById('itemCategorySelect');
-                                                                    const opt = sel.options[sel.selectedIndex];
-                                                                    if (opt.dataset.type) {
-                                                                        document.getElementById('itemAssetType').value = opt.dataset.type;
+                                                                <style>
+                                                                    .searchable-select {
+                                                                        position: relative;
                                                                     }
-                                                                }
-                                                            </script>
 
-                                                            <%- include('../layouts/footer') %>
+                                                                    .search-dropdown {
+                                                                        display: none;
+                                                                        position: absolute;
+                                                                        top: 100%;
+                                                                        left: 0;
+                                                                        right: 0;
+                                                                        background: var(--card-bg, #1a1f2e);
+                                                                        border: 1px solid var(--border-color, #2d3548);
+                                                                        border-radius: 8px;
+                                                                        max-height: 200px;
+                                                                        overflow-y: auto;
+                                                                        z-index: 1000;
+                                                                        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+                                                                        margin-top: 4px;
+                                                                    }
+
+                                                                    .search-dropdown.active {
+                                                                        display: block;
+                                                                    }
+
+                                                                    .search-dropdown-item {
+                                                                        padding: 10px 14px;
+                                                                        cursor: pointer;
+                                                                        font-size: 0.85rem;
+                                                                        color: var(--text-primary, #e2e8f0);
+                                                                        border-bottom: 1px solid var(--border-color, #2d3548);
+                                                                        transition: background 0.15s;
+                                                                    }
+
+                                                                    .search-dropdown-item:last-child {
+                                                                        border-bottom: none;
+                                                                    }
+
+                                                                    .search-dropdown-item:hover {
+                                                                        background: var(--primary-color, #667eea);
+                                                                        color: #fff;
+                                                                    }
+
+                                                                    .search-dropdown-item.hidden {
+                                                                        display: none;
+                                                                    }
+                                                                </style>
+
+                                                                <script>
+                                                                    function openModal(id) { document.getElementById(id).classList.add('active'); }
+                                                                    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+                                                                    function editAsset(a) {
+                                                                        document.getElementById('editAssetForm').action = '/admin/assets/update/' + a.id;
+                                                                        document.getElementById('ea_asset_code').value = a.asset_code;
+                                                                        document.getElementById('ea_asset_type').value = a.asset_type;
+                                                                        document.getElementById('ea_item_id').value = a.item_id || '';
+                                                                        document.getElementById('ea_branch_code').value = a.branch_code || '';
+                                                                        document.getElementById('ea_make_id').value = a.make_id || '';
+                                                                        document.getElementById('ea_model_id').value = a.model_id || '';
+                                                                        document.getElementById('ea_serial_number').value = a.serial_number || '';
+                                                                        document.getElementById('ea_count').value = a.count || 1;
+                                                                        document.getElementById('ea_status').value = a.status;
+                                                                        openModal('editAssetModal');
+                                                                    }
+
+                                                                    function transferAsset(a) {
+                                                                        document.getElementById('tr_asset_id').value = a.id;
+                                                                        document.getElementById('tr_asset_code').value = a.asset_code;
+                                                                        document.getElementById('tr_from_branch').value = a.branch_code || '';
+                                                                        document.getElementById('tr_from_display').value = a.branch_code ? a.branch_code + ' - ' + (a.branch_name || '') : 'N/A';
+                                                                        openModal('transferModal');
+                                                                    }
+
+                                                                    function filterTable(tableId, query) {
+                                                                        const rows = document.getElementById(tableId).querySelectorAll('tbody tr');
+                                                                        query = query.toLowerCase();
+                                                                        rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none'; });
+                                                                    }
+
+                                                                    // Filter categories by selected asset type
+                                                                    function filterCategoriesForAdd() {
+                                                                        const type = document.getElementById('addAssetType').value;
+                                                                        const catSelect = document.getElementById('addCategorySelect');
+                                                                        const opts = catSelect.querySelectorAll('option[data-type]');
+                                                                        opts.forEach(o => { o.style.display = o.dataset.type === type ? '' : 'none'; });
+                                                                        catSelect.value = '';
+                                                                        filterSubcatsForAdd();
+                                                                    }
+
+                                                                    // Filter subcategories by selected category  
+                                                                    function filterSubcatsForAdd() {
+                                                                        const catId = document.getElementById('addCategorySelect').value;
+                                                                        const subSelect = document.getElementById('addSubcatSelect');
+                                                                        const opts = subSelect.querySelectorAll('option[data-catid]');
+                                                                        opts.forEach(o => {
+                                                                            if (!catId) { o.style.display = ''; }
+                                                                            else { o.style.display = o.dataset.catid === catId ? '' : 'none'; }
+                                                                        });
+                                                                        subSelect.value = '';
+                                                                    }
+
+                                                                    // Auto-set asset_type when category is selected in subcategory form
+                                                                    function autoGenerateSubcatCode() {
+                                                                        const sel = document.getElementById('itemCategorySelect');
+                                                                        const opt = sel.options[sel.selectedIndex];
+                                                                        if (opt.dataset.type) {
+                                                                            document.getElementById('itemAssetType').value = opt.dataset.type;
+                                                                        }
+                                                                    }
+
+                                                                    // Hide branch field in Add Asset modal for stock view
+                                                                    (function () {
+                                                                        var currentView = '<%= view %>';
+                                                                        if (currentView === 'stock') {
+                                                                            var branchGroup = document.getElementById('addBranchGroup');
+                                                                            if (branchGroup) branchGroup.style.display = 'none';
+                                                                            var branchSelect = document.getElementById('addBranchSelect');
+                                                                            if (branchSelect) branchSelect.removeAttribute('required');
+                                                                        } else if (currentView === 'branch') {
+                                                                            var branchSelect = document.getElementById('addBranchSelect');
+                                                                            if (branchSelect) branchSelect.setAttribute('required', 'required');
+                                                                        }
+                                                                    })();
+
+                                                                    // Searchable dropdown functions
+                                                                    function showSearchDropdown(type) {
+                                                                        document.getElementById(type + 'Dropdown').classList.add('active');
+                                                                    }
+                                                                    function filterSearchDropdown(type) {
+                                                                        var input = document.getElementById(type + 'SearchInput');
+                                                                        var dropdown = document.getElementById(type + 'Dropdown');
+                                                                        var query = input.value.toLowerCase();
+                                                                        var items = dropdown.querySelectorAll('.search-dropdown-item');
+                                                                        var visibleCount = 0;
+                                                                        items.forEach(function (item) {
+                                                                            var label = item.getAttribute('data-label').toLowerCase();
+                                                                            if (label.indexOf(query) !== -1) {
+                                                                                item.classList.remove('hidden');
+                                                                                visibleCount++;
+                                                                            } else {
+                                                                                item.classList.add('hidden');
+                                                                            }
+                                                                        });
+                                                                        dropdown.classList.add('active');
+                                                                        // Clear hidden value when user types
+                                                                        document.getElementById(type + 'SearchValue').value = '';
+                                                                    }
+                                                                    function selectSearchItem(type, el) {
+                                                                        document.getElementById(type + 'SearchInput').value = el.getAttribute('data-label');
+                                                                        document.getElementById(type + 'SearchValue').value = el.getAttribute('data-value');
+                                                                        document.getElementById(type + 'Dropdown').classList.remove('active');
+                                                                    }
+                                                                    // Close dropdowns on click outside
+                                                                    document.addEventListener('click', function (e) {
+                                                                        ['emp', 'asset'].forEach(function (type) {
+                                                                            var wrapper = document.getElementById(type + 'SearchWrapper');
+                                                                            if (wrapper && !wrapper.contains(e.target)) {
+                                                                                var dd = document.getElementById(type + 'Dropdown');
+                                                                                if (dd) dd.classList.remove('active');
+                                                                            }
+                                                                        });
+                                                                    });
+                                                                </script>
+
+                                                                <%- include('../layouts/footer') %>

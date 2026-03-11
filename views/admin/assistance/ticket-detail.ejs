@@ -1,0 +1,368 @@
+<%- include('../../layouts/header') %>
+    <%- include('../../layouts/sidebar') %>
+
+        <div class="page-header">
+            <div style="display:flex;align-items:center;gap:16px;">
+                <a href="/admin/assistance/tickets" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <h2>Ticket: <%= ticket.ticket_code %>
+                    </h2>
+                    <p>
+                        <%= ticket.type==='onboarding' ? 'Onboarding' : 'Offboarding' %> Ticket
+                    </p>
+                </div>
+                <span class="badge badge-<%= ticket.status %>"
+                    style="font-size:0.9rem;padding:6px 16px;margin-left:8px;">
+                    <%= ticket.status %>
+                </span>
+            </div>
+        </div>
+
+        <% if (success) { %>
+            <div class="flash-message flash-success"><i class="fas fa-check-circle"></i>
+                <%= success %>
+            </div>
+            <% } %>
+                <% if (error) { %>
+                    <div class="flash-message flash-error"><i class="fas fa-exclamation-circle"></i>
+                        <%= error %>
+                    </div>
+                    <% } %>
+
+                        <!-- Ticket Info Card -->
+                        <div class="card" style="margin-bottom:24px;">
+                            <h3 style="margin:0 0 16px;font-size:1.1rem;"><i class="fas fa-info-circle"
+                                    style="margin-right:8px;color:var(--primary-color);"></i> Ticket Information</h3>
+                            <div
+                                style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
+                                <div>
+                                    <label
+                                        style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Ticket
+                                        Code</label>
+                                    <p style="font-weight:600;margin:4px 0 0;">
+                                        <%= ticket.ticket_code %>
+                                    </p>
+                                </div>
+                                <div>
+                                    <label
+                                        style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Type</label>
+                                    <p style="margin:4px 0 0;"><span
+                                            class="badge badge-<%= ticket.type === 'onboarding' ? 'active' : 'inactive' %>">
+                                            <%= ticket.type %>
+                                        </span></p>
+                                </div>
+                                <div>
+                                    <label
+                                        style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Created
+                                        By</label>
+                                    <p style="margin:4px 0 0;">
+                                        <%= ticket.created_by_name || '-' %>
+                                    </p>
+                                </div>
+                                <div>
+                                    <label
+                                        style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Status</label>
+                                    <p style="margin:4px 0 0;"><span class="badge badge-<%= ticket.status %>">
+                                            <%= ticket.status %>
+                                        </span></p>
+                                </div>
+                                <div>
+                                    <label
+                                        style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Created
+                                        At</label>
+                                    <p style="margin:4px 0 0;">
+                                        <%= ticket.created_at ? new Date(ticket.created_at).toLocaleString('en-IN')
+                                            : '-' %>
+                                    </p>
+                                </div>
+                                <div>
+                                    <label
+                                        style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Last
+                                        Modified</label>
+                                    <p style="margin:4px 0 0;">
+                                        <%= ticket.updated_at ? new Date(ticket.updated_at).toLocaleString('en-IN')
+                                            : '-' %>
+                                    </p>
+                                </div>
+                                <% if (ticket.closed_at) { %>
+                                    <div>
+                                        <label
+                                            style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Closed
+                                            At</label>
+                                        <p style="margin:4px 0 0;">
+                                            <%= new Date(ticket.closed_at).toLocaleString('en-IN') %>
+                                        </p>
+                                    </div>
+                                    <% } %>
+                            </div>
+                        </div>
+
+                        <!-- Employee Details -->
+                        <% details.forEach(function(d, idx) { %>
+                            <div class="card" style="margin-bottom:24px;">
+                                <h3 style="margin:0 0 16px;font-size:1.1rem;"><i class="fas fa-user"
+                                        style="margin-right:8px;color:var(--primary-color);"></i> Employee Details</h3>
+                                <div
+                                    style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
+                                    <div>
+                                        <label
+                                            style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Employee
+                                            Code</label>
+                                        <p style="font-weight:600;margin:4px 0 0;">
+                                            <%= d.employee_code || '-' %>
+                                        </p>
+                                    </div>
+                                    <% if (ticket.type==='onboarding' ) { %>
+                                        <div>
+                                            <label
+                                                style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Employee
+                                                Name</label>
+                                            <p style="margin:4px 0 0;">
+                                                <%= d.employee_name || d.emp_name || '-' %>
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label
+                                                style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Designation</label>
+                                            <p style="margin:4px 0 0;">
+                                                <%= d.designation || '-' %>
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label
+                                                style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Department</label>
+                                            <p style="margin:4px 0 0;">
+                                                <%= d.department || '-' %>
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label
+                                                style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Reporting
+                                                To</label>
+                                            <p style="margin:4px 0 0;">
+                                                <%= d.reporting_to || '-' %>
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label
+                                                style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Contact
+                                                Number</label>
+                                            <p style="margin:4px 0 0;">
+                                                <%= d.contact_number || '-' %>
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label
+                                                style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Date
+                                                of Birth</label>
+                                            <p style="margin:4px 0 0;">
+                                                <%= d.date_of_birth ? new
+                                                    Date(d.date_of_birth).toLocaleDateString('en-IN') : '-' %>
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label
+                                                style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Branch
+                                                Code</label>
+                                            <p style="margin:4px 0 0;">
+                                                <%= d.branch_code || '-' %>
+                                            </p>
+                                        </div>
+                                        <% } else { %>
+                                            <div>
+                                                <label
+                                                    style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Employee
+                                                    Name</label>
+                                                <p style="margin:4px 0 0;">
+                                                    <%= d.emp_name || '-' %>
+                                                </p>
+                                            </div>
+                                            <% } %>
+                                                <div>
+                                                    <label
+                                                        style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Requirements</label>
+                                                    <p style="margin:4px 0 0;">
+                                                        <% if (d.email_required) { %><span class="badge badge-active"
+                                                                style="margin-right:6px;"><i
+                                                                    class="fas fa-envelope"></i> Email</span>
+                                                            <% } %>
+                                                                <% if (d.laptop_required) { %><span
+                                                                        class="badge badge-active"><i
+                                                                            class="fas fa-laptop"></i> Laptop</span>
+                                                                    <% } %>
+                                                                        <% if (!d.email_required && !d.laptop_required)
+                                                                            { %>-<% } %>
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <label
+                                                        style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">Current
+                                                        Email</label>
+                                                    <p style="margin:4px 0 0;">
+                                                        <%= d.emp_email || d.email_id
+                                                            || '<em style="color:var(--text-secondary)">Not set</em>' %>
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <label
+                                                        style="font-size:0.75rem;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">AD
+                                                        Account Status</label>
+                                                    <p style="margin:4px 0 0;"><span
+                                                            class="badge badge-<%= d.emp_ad_status === 'active' ? 'active' : 'inactive' %>">
+                                                            <%= d.emp_ad_status || 'not_created' %>
+                                                        </span></p>
+                                                </div>
+                                </div>
+                            </div>
+
+                            <!-- Process Ticket Form (only if ticket not closed) -->
+                            <% if (ticket.status !=='closed' ) { %>
+                                <div class="card" style="margin-bottom:24px;">
+                                    <h3 style="margin:0 0 16px;font-size:1.1rem;"><i class="fas fa-cogs"
+                                            style="margin-right:8px;color:var(--primary-color);"></i> Process Ticket
+                                    </h3>
+                                    <form action="/admin/assistance/tickets/process" method="POST">
+                                        <input type="hidden" name="ticket_id" value="<%= ticket.id %>">
+                                        <input type="hidden" name="ticket_code" value="<%= ticket.ticket_code %>">
+                                        <input type="hidden" name="detail_id" value="<%= d.id %>">
+                                        <input type="hidden" name="employee_code" value="<%= d.employee_code %>">
+
+                                        <div
+                                            style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;">
+                                            <% if (d.email_required) { %>
+                                                <div class="form-group">
+                                                    <label>Email ID</label>
+                                                    <input type="email" name="email_id" class="form-control"
+                                                        value="<%= d.email_id || d.emp_email || '' %>"
+                                                        placeholder="Enter email address">
+                                                </div>
+                                                <% } %>
+
+                                                    <div class="form-group">
+                                                        <label>AD Account Status</label>
+                                                        <select name="ad_status" class="form-control">
+                                                            <option value="">-- No Change --</option>
+                                                            <option value="active" <%=d.emp_ad_status==='active'
+                                                                ? 'selected' : '' %>>Active</option>
+                                                            <option value="not_created"
+                                                                <%=d.emp_ad_status==='not_created' ? 'selected' : '' %>
+                                                                >Not Created</option>
+                                                            <option value="disabled" <%=d.emp_ad_status==='disabled'
+                                                                ? 'selected' : '' %>>Disabled</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <% if (d.laptop_required) { %>
+                                                        <div class="form-group" style="position:relative;">
+                                                            <label>Assign Asset from Stock</label>
+                                                            <input type="hidden" name="laptop_serial" id="selectedAssetCode_<%= idx %>">
+                                                            <input type="text" class="form-control" id="assetSearch_<%= idx %>"
+                                                                placeholder="Search by asset code, item, make, model, serial..."
+                                                                value="<%= d.laptop_serial || '' %>"
+                                                                autocomplete="off"
+                                                                onfocus="showAssetDropdown(<%= idx %>)"
+                                                                oninput="filterAssetDropdown(<%= idx %>)">
+                                                            <div class="asset-dropdown" id="assetDropdown_<%= idx %>" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:250px;overflow-y:auto;background:var(--card-bg,#fff);border:1px solid var(--border-color,#ddd);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:100;margin-top:4px;">
+                                                                <% if (typeof stockAssets !== 'undefined') { stockAssets.forEach(function(sa) { %>
+                                                                <div class="asset-option" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border-color,#eee);transition:background 0.15s;"
+                                                                    onmouseenter="this.style.background='var(--hover-bg,#f0f4ff)'"
+                                                                    onmouseleave="this.style.background=''"
+                                                                    onclick="selectAsset(<%= idx %>, '<%= sa.asset_code %>', this)"
+                                                                    data-search="<%= (sa.asset_code + ' ' + (sa.item_name||'') + ' ' + (sa.make_name||'') + ' ' + (sa.model_name||'') + ' ' + (sa.serial_number||'') + ' ' + (sa.branch_name||'')).toLowerCase() %>">
+                                                                    <div style="font-weight:600;font-size:0.92rem;color:var(--primary-color);"><%= sa.asset_code %></div>
+                                                                    <div style="font-size:0.82rem;color:var(--text-secondary);margin-top:2px;">
+                                                                        <%= sa.item_name || '-' %> &middot; <%= sa.make_name || '-' %> &middot; <%= sa.model_name || '-' %>
+                                                                        <% if (sa.serial_number) { %> &middot; S/N: <%= sa.serial_number %><% } %>
+                                                                        <% if (sa.branch_name) { %> &middot; <%= sa.branch_name %><% } %>
+                                                                    </div>
+                                                                </div>
+                                                                <% }); } %>
+                                                                <div class="asset-no-results" style="display:none;padding:12px 14px;color:var(--text-secondary);text-align:center;font-size:0.85rem;">
+                                                                    <i class="fas fa-search" style="margin-right:6px;"></i>No matching assets found
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <% } %>
+
+                                                            <div class="form-group">
+                                                                <label>Remarks</label>
+                                                                <input type="text" name="remarks" class="form-control"
+                                                                    value="<%= d.remarks || '' %>"
+                                                                    placeholder="Optional remarks">
+                                                            </div>
+
+                                                            <div class="form-group">
+                                                                <label>Ticket Status</label>
+                                                                <select name="status" class="form-control">
+                                                                    <option value="open" <%=ticket.status==='open'
+                                                                        ? 'selected' : '' %>>Open</option>
+                                                                    <option value="in_progress"
+                                                                        <%=ticket.status==='in_progress' ? 'selected'
+                                                                        : '' %>>In Progress</option>
+                                                                    <option value="closed">Closed</option>
+                                                                </select>
+                                                            </div>
+                                        </div>
+
+                                        <div style="margin-top:16px;">
+                                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i>
+                                                Save Changes</button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <% } %>
+
+                                    <% }) %>
+
+                        <script>
+                            function showAssetDropdown(idx) {
+                                var dd = document.getElementById('assetDropdown_' + idx);
+                                dd.style.display = 'block';
+                                filterAssetDropdown(idx);
+                            }
+
+                            function filterAssetDropdown(idx) {
+                                var input = document.getElementById('assetSearch_' + idx);
+                                var dd = document.getElementById('assetDropdown_' + idx);
+                                var query = input.value.toLowerCase();
+                                var options = dd.querySelectorAll('.asset-option');
+                                var noResults = dd.querySelector('.asset-no-results');
+                                var visibleCount = 0;
+
+                                options.forEach(function(opt) {
+                                    var searchText = opt.getAttribute('data-search') || '';
+                                    if (!query || searchText.indexOf(query) !== -1) {
+                                        opt.style.display = '';
+                                        visibleCount++;
+                                    } else {
+                                        opt.style.display = 'none';
+                                    }
+                                });
+
+                                if (noResults) {
+                                    noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+                                }
+                            }
+
+                            function selectAsset(idx, assetCode, el) {
+                                var input = document.getElementById('assetSearch_' + idx);
+                                var hidden = document.getElementById('selectedAssetCode_' + idx);
+                                var label = el.querySelector('div').textContent.trim();
+                                input.value = assetCode;
+                                hidden.value = assetCode;
+                                document.getElementById('assetDropdown_' + idx).style.display = 'none';
+                            }
+
+                            // Close dropdown when clicking outside
+                            document.addEventListener('click', function(e) {
+                                var dropdowns = document.querySelectorAll('.asset-dropdown');
+                                dropdowns.forEach(function(dd) {
+                                    var parent = dd.parentElement;
+                                    if (!parent.contains(e.target)) {
+                                        dd.style.display = 'none';
+                                    }
+                                });
+                            });
+                        </script>
+
+                                        <%- include('../../layouts/footer') %>

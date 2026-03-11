@@ -46,6 +46,9 @@ router.get('/reports/export/excel', adminCtrl.exportExcel);
 
 // Assistance
 router.get('/assistance/tickets', adminCtrl.tickets);
+router.post('/assistance/tickets', adminCtrl.createTicket);
+router.get('/assistance/tickets/:code', adminCtrl.viewTicket);
+router.post('/assistance/tickets/process', adminCtrl.processTicket);
 router.get('/assistance/history', adminCtrl.ticketHistory);
 
 // Agreements

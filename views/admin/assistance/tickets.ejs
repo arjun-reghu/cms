@@ -21,6 +21,8 @@
                             <div class="search-box"><i class="fas fa-search"></i><input type="text"
                                     placeholder="Search tickets..." onkeyup="filterTable('ticketTable', this.value)">
                             </div>
+                            <button class="btn btn-primary" onclick="openModal('createTicketModal')"><i
+                                    class="fas fa-plus"></i> Create Ticket</button>
                         </div>
 
                         <div class="card">
@@ -30,6 +32,7 @@
                                         <tr>
                                             <th>Ticket Code</th>
                                             <th>Type</th>
+                                            <th>Employee</th>
                                             <th>Created By</th>
                                             <th>Status</th>
                                             <th>Created At</th>
@@ -39,20 +42,24 @@
                                     <tbody>
                                         <% if (tickets.length===0) { %>
                                             <tr>
-                                                <td colspan="6" class="empty-state"><i class="fas fa-ticket-alt"></i>
+                                                <td colspan="7" class="empty-state"><i class="fas fa-ticket-alt"></i>
                                                     <p>No open tickets</p>
                                                 </td>
                                             </tr>
                                             <% } %>
-                                                <% tickets.forEach(t=> { %>
+                                                <% tickets.forEach(function(t) { %>
                                                     <tr>
-                                                        <td><strong>
+                                                        <td><a href="/admin/assistance/tickets/<%= t.ticket_code %>"
+                                                                style="color:var(--primary-color);text-decoration:none;font-weight:600;">
                                                                 <%= t.ticket_code %>
-                                                            </strong></td>
+                                                            </a></td>
                                                         <td><span
                                                                 class="badge badge-<%= t.type === 'onboarding' ? 'active' : 'inactive' %>">
                                                                 <%= t.type %>
                                                             </span></td>
+                                                        <td>
+                                                            <%= t.created_by_name || '-' %>
+                                                        </td>
                                                         <td>
                                                             <%= t.created_by_name || '-' %>
                                                         </td>
@@ -64,9 +71,9 @@
                                                                 Date(t.created_at).toLocaleDateString('en-IN') : '-' %>
                                                         </td>
                                                         <td>
-                                                            <button class="btn btn-sm btn-outline"
-                                                                onclick="viewTicket('<%= t.ticket_code %>')"><i
-                                                                    class="fas fa-eye"></i></button>
+                                                            <a href="/admin/assistance/tickets/<%= t.ticket_code %>"
+                                                                class="btn btn-sm btn-outline"><i
+                                                                    class="fas fa-eye"></i></a>
                                                         </td>
                                                     </tr>
                                                     <% }) %>
@@ -75,13 +82,136 @@
                             </div>
                         </div>
 
+                        <!-- Create Ticket Modal -->
+                        <div class="modal-overlay" id="createTicketModal">
+                            <div class="modal" style="max-width:650px;">
+                                <div class="modal-header">
+                                    <h3>Create New Ticket</h3>
+                                    <button class="modal-close"
+                                        onclick="closeModal('createTicketModal')">&times;</button>
+                                </div>
+                                <form action="/admin/assistance/tickets" method="POST" autocomplete="off">
+                                    <div class="form-group">
+                                        <label>Ticket Type *</label>
+                                        <select name="type" id="ticketType" class="form-control" required
+                                            onchange="toggleTicketForm()">
+                                            <option value="">Select Type</option>
+                                            <option value="onboarding">Onboarding</option>
+                                            <option value="offboarding">Offboarding</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Onboarding Fields -->
+                                    <div id="onboardingFields" style="display:none;">
+                                        <div class="form-row">
+                                            <div class="form-group"><label>Employee Code *</label>
+                                                <input type="text" name="employee_code" class="form-control"
+                                                    id="onbEmpCode">
+                                            </div>
+                                            <div class="form-group"><label>Employee Name *</label>
+                                                <input type="text" name="employee_name" class="form-control"
+                                                    id="onbEmpName">
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group"><label>Designation</label>
+                                                <input type="text" name="designation" class="form-control">
+                                            </div>
+                                            <div class="form-group"><label>Department</label>
+                                                <input type="text" name="department" class="form-control">
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group"><label>Reporting To</label>
+                                                <input type="text" name="reporting_to" class="form-control">
+                                            </div>
+                                            <div class="form-group"><label>Contact Number</label>
+                                                <input type="text" name="contact_number" class="form-control">
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group"><label>Date of Birth</label>
+                                                <input type="date" name="date_of_birth" class="form-control">
+                                            </div>
+                                            <div class="form-group"><label>Branch</label>
+                                                <select name="branch_code" class="form-control" id="onbBranch">
+                                                    <option value="">Select Branch</option>
+                                                    <% if (typeof branches !=='undefined' ) {
+                                                        branches.forEach(function(b) { %>
+                                                        <option value="<%= b.branch_code %>">
+                                                            <%= b.branch_code %> - <%= b.branch_name %>
+                                                        </option>
+                                                        <% }); } %>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div style="display:flex;gap:24px;margin:12px 0 8px;">
+                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" name="email_required" value="1"> Email ID
+                                                Required
+                                            </label>
+                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" name="laptop_required" value="1"> Laptop Required
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Offboarding Fields -->
+                                    <div id="offboardingFields" style="display:none;">
+                                        <div class="form-group"><label>Employee Code *</label>
+                                            <input type="text" name="employee_code" class="form-control" id="ofbEmpCode"
+                                                placeholder="Paste or type employee code...">
+                                        </div>
+                                    </div>
+
+                                    <div style="display:flex;gap:12px;margin-top:16px;">
+                                        <button type="submit" class="btn btn-primary" id="submitTicketBtn" disabled><i
+                                                class="fas fa-paper-plane"></i> Submit Ticket</button>
+                                        <button type="button" class="btn btn-outline"
+                                            onclick="closeModal('createTicketModal')"><i class="fas fa-times"></i>
+                                            Discard</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
                         <script>
+                            function openModal(id) { document.getElementById(id).classList.add('active'); }
+                            function closeModal(id) { document.getElementById(id).classList.remove('active'); }
                             function filterTable(tableId, query) {
-                                const rows = document.getElementById(tableId).querySelectorAll('tbody tr');
+                                var rows = document.getElementById(tableId).querySelectorAll('tbody tr');
                                 query = query.toLowerCase();
-                                rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none'; });
+                                rows.forEach(function (row) { row.style.display = row.textContent.toLowerCase().indexOf(query) !== -1 ? '' : 'none'; });
                             }
-                            function viewTicket(code) { alert('Ticket details for ' + code); }
+
+                            function toggleTicketForm() {
+                                var type = document.getElementById('ticketType').value;
+                                var onb = document.getElementById('onboardingFields');
+                                var ofb = document.getElementById('offboardingFields');
+                                var btn = document.getElementById('submitTicketBtn');
+
+                                // Disable all inputs in hidden sections to avoid conflicting name attributes
+                                onb.style.display = 'none';
+                                ofb.style.display = 'none';
+                                onb.querySelectorAll('input, select').forEach(function (el) { el.disabled = true; });
+                                ofb.querySelectorAll('input, select').forEach(function (el) { el.disabled = true; });
+
+                                if (type === 'onboarding') {
+                                    onb.style.display = 'block';
+                                    onb.querySelectorAll('input, select').forEach(function (el) { el.disabled = false; });
+                                    document.getElementById('onbEmpCode').setAttribute('required', 'required');
+                                    document.getElementById('onbEmpName').setAttribute('required', 'required');
+
+                                    btn.disabled = false;
+                                } else if (type === 'offboarding') {
+                                    ofb.style.display = 'block';
+                                    ofb.querySelectorAll('input, select').forEach(function (el) { el.disabled = false; });
+                                    document.getElementById('ofbEmpCode').setAttribute('required', 'required');
+                                    btn.disabled = false;
+                                } else {
+                                    btn.disabled = true;
+                                }
+                            }
                         </script>
 
                         <%- include('../../layouts/footer') %>

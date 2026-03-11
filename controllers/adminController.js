@@ -61,7 +61,19 @@ module.exports = {
         try {
             const employees = await EmployeeModel.findAll();
             const branches = await BranchModel.findActive();
-            res.render('admin/employees', { title: 'Employees - CMS', currentPage: 'employees', employees, branches, success: req.query.success, error: req.query.error });
+            const assignedAssets = await AssetModel.getAssignedByEmployee();
+            // Build a map: employee_code -> { codes: [...], serials: [...] }
+            const employeeAssetsMap = {};
+            assignedAssets.forEach(row => {
+                if (!employeeAssetsMap[row.employee_code]) {
+                    employeeAssetsMap[row.employee_code] = { codes: [], serials: [] };
+                }
+                employeeAssetsMap[row.employee_code].codes.push(row.asset_code);
+                if (row.serial_number) {
+                    employeeAssetsMap[row.employee_code].serials.push(row.serial_number);
+                }
+            });
+            res.render('admin/employees', { title: 'Employees - CMS', currentPage: 'employees', employees, branches, employeeAssetsMap, success: req.query.success, error: req.query.error });
         } catch (err) { console.error(err); res.status(500).send('Server Error'); }
     },
     createEmployee: async (req, res) => {
@@ -231,10 +243,11 @@ module.exports = {
             const makes = await AssetModel.getMakes();
             const models = await AssetModel.getModels();
             const branches = await BranchModel.findActive();
+            const categories = await AssetModel.getCategories();
             const assets = await AssetModel.findFiltered(req.query);
             res.render('admin/reports', {
                 title: 'Reports - CMS', currentPage: 'reports',
-                items, makes, models, branches, assets, filters: req.query
+                items, makes, models, branches, categories, assets, filters: req.query
             });
         } catch (err) { console.error(err); res.status(500).send('Server Error'); }
     },
@@ -256,8 +269,111 @@ module.exports = {
         try {
             const tickets = await TicketModel.findOpen();
             const employees = await EmployeeModel.findActive();
-            res.render('admin/assistance/tickets', { title: 'Assistance Tickets - CMS', currentPage: 'tickets', tickets, employees, success: req.query.success, error: req.query.error });
+            const branches = await BranchModel.findActive();
+            res.render('admin/assistance/tickets', { title: 'Assistance Tickets - CMS', currentPage: 'tickets', tickets, employees, branches, success: req.query.success, error: req.query.error });
         } catch (err) { console.error(err); res.status(500).send('Server Error'); }
+    },
+    createTicket: async (req, res) => {
+        try {
+            const { type } = req.body;
+            const ticket_code = await TicketModel.generateCode(type);
+            const result = await TicketModel.create({
+                ticket_code, type,
+                created_by: req.session.user.id,
+                status: 'open'
+            });
+
+            if (type === 'onboarding') {
+                // Create the new employee first
+                const empData = {
+                    employee_code: (req.body.employee_code || '').trim(),
+                    employee_name: (req.body.employee_name || '').trim(),
+                    designation: (req.body.designation || '').trim(),
+                    department: (req.body.department || '').trim(),
+                    reporting_to: (req.body.reporting_to || '').trim(),
+                    contact_number: (req.body.contact_number || '').trim(),
+                    date_of_birth: req.body.date_of_birth || null,
+                    branch_code: req.body.branch_code || null,
+                    email_status: 'not_created',
+                    ad_account_status: 'not_created',
+                    status: 'active'
+                };
+                await EmployeeModel.create(empData);
+
+                // Save ticket detail with all onboarding info
+                await TicketModel.addDetail({
+                    ticket_id: result.insertId,
+                    employee_code: empData.employee_code,
+                    employee_name: empData.employee_name,
+                    designation: empData.designation,
+                    department: empData.department,
+                    reporting_to: empData.reporting_to,
+                    contact_number: empData.contact_number,
+                    date_of_birth: empData.date_of_birth,
+                    branch_code: empData.branch_code,
+                    email_required: req.body.email_required ? 1 : 0,
+                    laptop_required: req.body.laptop_required ? 1 : 0
+                });
+            } else {
+                // Offboarding — just store the employee code (trimmed for Excel paste)
+                const empCode = (req.body.employee_code || '').trim();
+                await TicketModel.addDetail({
+                    ticket_id: result.insertId,
+                    employee_code: empCode
+                });
+            }
+
+            await NotificationService.logActivity(req.session.user.id, 'Assistance', 'Create', `Created ${type} ticket ${ticket_code}`);
+            res.redirect('/admin/assistance/tickets?success=Ticket ' + ticket_code + ' created successfully');
+        } catch (err) { console.error(err); res.redirect('/admin/assistance/tickets?error=' + encodeURIComponent(err.message)); }
+    },
+    viewTicket: async (req, res) => {
+        try {
+            const ticket = await TicketModel.findByCode(req.params.code);
+            if (!ticket) return res.redirect('/admin/assistance/tickets?error=Ticket not found');
+            const details = await TicketModel.getDetails(ticket.id);
+            const branches = await BranchModel.findActive();
+            const stockAssets = await AssetModel.findStock();
+            res.render('admin/assistance/ticket-detail', {
+                title: 'Ticket ' + ticket.ticket_code + ' - CMS', currentPage: 'tickets',
+                ticket, details, branches, stockAssets,
+                success: req.query.success, error: req.query.error
+            });
+        } catch (err) { console.error(err); res.status(500).send('Server Error'); }
+    },
+    processTicket: async (req, res) => {
+        try {
+            const { ticket_id, ticket_code, status, detail_id, email_id, ad_status, employee_code } = req.body;
+
+            // Update ticket detail if provided
+            if (detail_id) {
+                await TicketModel.updateDetail(detail_id, {
+                    email_id: email_id || null,
+                    laptop_serial: req.body.laptop_serial || null,
+                    remarks: req.body.remarks || null
+                });
+            }
+
+            // Update employee email_id if email was provided
+            if (email_id && employee_code) {
+                const db = require('../config/db');
+                await db.query(`UPDATE employees SET email_id = ?, email_status = 'active' WHERE employee_code = ?`, [email_id, employee_code]);
+            }
+
+            // Update AD account status if provided
+            if (ad_status && employee_code) {
+                const db = require('../config/db');
+                await db.query(`UPDATE employees SET ad_account_status = ? WHERE employee_code = ?`, [ad_status, employee_code]);
+            }
+
+            // Update ticket status
+            if (status) {
+                await TicketModel.updateStatus(ticket_id, status);
+            }
+
+            await NotificationService.logActivity(req.session.user.id, 'Assistance', 'Process', `Processed ticket ${ticket_code || ticket_id}`);
+            res.redirect('/admin/assistance/tickets/' + (ticket_code || '') + '?success=Ticket updated successfully');
+        } catch (err) { console.error(err); res.redirect('/admin/assistance/tickets?error=' + encodeURIComponent(err.message)); }
     },
     ticketHistory: async (req, res) => {
         try {

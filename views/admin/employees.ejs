@@ -20,11 +20,28 @@
                         <div class="action-bar">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" id="searchEmp" placeholder="Search employees..."
-                                    onkeyup="filterTable('empTable', this.value)">
+                                <input type="text" id="searchEmp" placeholder="Search by code, name, serial no..."
+                                    onkeyup="filterAndPaginate()">
                             </div>
-                            <button class="btn btn-primary" onclick="openModal('addEmpModal')"><i
-                                    class="fas fa-plus"></i> Add Employee</button>
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <label
+                                        style="font-size:0.85rem;color:var(--text-secondary);white-space:nowrap;">Show</label>
+                                    <select id="rowCount" class="form-control"
+                                        style="width:auto;min-width:70px;padding:6px 10px;font-size:0.85rem;"
+                                        onchange="filterAndPaginate()">
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                        <option value="150">150</option>
+                                        <option value="200">200</option>
+                                        <option value="all">All</option>
+                                    </select>
+                                    <span id="rowInfo"
+                                        style="font-size:0.8rem;color:var(--text-muted);white-space:nowrap;"></span>
+                                </div>
+                                <button class="btn btn-primary" onclick="openModal('addEmpModal')"><i
+                                        class="fas fa-plus"></i> Add Employee</button>
+                            </div>
                         </div>
 
                         <div class="card">
@@ -37,6 +54,7 @@
                                             <th>Designation</th>
                                             <th>Department</th>
                                             <th>Branch</th>
+                                            <th>Assets</th>
                                             <th>Email Status</th>
                                             <th>AD Status</th>
                                             <th>Status</th>
@@ -46,13 +64,19 @@
                                     <tbody>
                                         <% if (employees.length===0) { %>
                                             <tr>
-                                                <td colspan="9" class="empty-state"><i class="fas fa-users"></i>
+                                                <td colspan="10" class="empty-state"><i class="fas fa-users"></i>
                                                     <p>No employees found</p>
                                                 </td>
                                             </tr>
                                             <% } %>
-                                                <% employees.forEach((emp, idx)=> { %>
-                                                    <tr>
+                                                <% employees.forEach(function(emp, idx) { var empAssets=(typeof
+                                                    employeeAssetsMap !=='undefined' &&
+                                                    employeeAssetsMap[emp.employee_code]) ?
+                                                    employeeAssetsMap[emp.employee_code] : null; var
+                                                    assetCodes=empAssets ? empAssets.codes.join(', ') : '';
+                                                    var serialNos = empAssets ? empAssets.serials.join(' , ') : '';
+                                                    %>
+                                                    <tr data-serials="<%= serialNos.toLowerCase() %>">
                                                         <td><strong>
                                                                 <%= emp.employee_code %>
                                                             </strong></td>
@@ -60,34 +84,37 @@
                                                             <%= emp.employee_name %>
                                                         </td>
                                                         <td>
-                                                            <%= emp.designation || '-' %>
-                                                        </td>
-                                                        <td>
-                                                            <%= emp.department || '-' %>
-                                                        </td>
-                                                        <td>
-                                                            <%= emp.branch_name || emp.branch_code || '-' %>
-                                                        </td>
-                                                        <td><span class="badge badge-<%= emp.email_status %>">
-                                                                <%= emp.email_status %>
-                                                            </span></td>
-                                                        <td><span class="badge badge-<%= emp.ad_account_status %>">
-                                                                <%= emp.ad_account_status %>
-                                                            </span></td>
-                                                        <td><span class="badge badge-<%= emp.status %>">
-                                                                <%= emp.status %>
-                                                            </span></td>
-                                                        <td>
-                                                            <button class="btn btn-sm btn-outline"
-                                                                onclick="editEmployee(empData[<%= idx %>])"><i
-                                                                    class="fas fa-edit"></i></button>
-                                                            <form action="/admin/employees/delete/<%= emp.id %>"
-                                                                method="POST" style="display:inline;"
-                                                                onsubmit="return confirmDelete('Delete this employee?')">
-                                                                <button type="submit" class="btn btn-sm btn-danger"><i
-                                                                        class="fas fa-trash"></i></button>
-                                                            </form>
-                                                        </td>
+                                                            <%= emp.designation || ' -' %>
+                                                    </td>
+                                                    <td>
+                                                        <%= emp.department || '-' %>
+                                                    </td>
+                                                    <td>
+                                                        <%= emp.branch_name || emp.branch_code || '-' %>
+                                                    </td>
+                                                    <td style="max-width:200px;font-size:0.8rem;">
+                                                        <%= assetCodes || '-' %>
+                                                    </td>
+                                                    <td><span class="badge badge-<%= emp.email_status %>">
+                                                            <%= emp.email_status %>
+                                                        </span></td>
+                                                    <td><span class="badge badge-<%= emp.ad_account_status %>">
+                                                            <%= emp.ad_account_status %>
+                                                        </span></td>
+                                                    <td><span class="badge badge-<%= emp.status %>">
+                                                            <%= emp.status %>
+                                                        </span></td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline"
+                                                            onclick="editEmployee(empData[<%= idx %>])"><i
+                                                                class="fas fa-edit"></i></button>
+                                                        <form action="/admin/employees/delete/<%= emp.id %>"
+                                                            method="POST" style="display:inline;"
+                                                            onsubmit="return confirmDelete('Delete this employee?')">
+                                                            <button type="submit" class="btn btn-sm btn-danger"><i
+                                                                    class="fas fa-trash"></i></button>
+                                                        </form>
+                                                    </td>
                                                     </tr>
                                                     <% }) %>
                                     </tbody>
@@ -302,11 +329,33 @@
                                 document.getElementById('ee_status').value = e.status || 'active';
                                 openModal('editEmpModal');
                             }
-                            function filterTable(tableId, query) {
-                                const rows = document.getElementById(tableId).querySelectorAll('tbody tr');
-                                query = query.toLowerCase();
-                                rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none'; });
+                            function filterAndPaginate() {
+                                var query = document.getElementById('searchEmp').value.toLowerCase();
+                                var limit = document.getElementById('rowCount').value;
+                                var rows = document.getElementById('empTable').querySelectorAll('tbody tr');
+                                var shown = 0;
+                                var matched = 0;
+                                rows.forEach(function (row) {
+                                    if (row.querySelector('.empty-state')) return;
+                                    var text = row.textContent.toLowerCase();
+                                    var serials = row.getAttribute('data-serials') || '';
+                                    var matches = text.includes(query) || serials.includes(query);
+                                    if (matches) {
+                                        matched++;
+                                        if (limit === 'all' || shown < parseInt(limit)) {
+                                            row.style.display = '';
+                                            shown++;
+                                        } else {
+                                            row.style.display = 'none';
+                                        }
+                                    } else {
+                                        row.style.display = 'none';
+                                    }
+                                });
+                                document.getElementById('rowInfo').textContent = 'Showing ' + shown + ' of ' + matched;
                             }
+                            // Initialize on page load
+                            filterAndPaginate();
                         </script>
 
                         <%- include('../layouts/footer') %>

@@ -89,25 +89,50 @@ module.exports = {
     // ===== ASSETS =====
     assets: async (req, res) => {
         try {
-            const view = req.query.view || 'branch';
+            const view = req.query.view || 'dashboard';
             const assets = await AssetModel.findAll();
             const items = await AssetModel.getItems();
             const makes = await AssetModel.getMakes();
             const models = await AssetModel.getModels();
             const branches = await BranchModel.findActive();
             const employees = await EmployeeModel.findActive();
+            const categories = await AssetModel.getCategories();
+            let categoryCounts = [];
+            let categorySummary = [];
+            if (view === 'dashboard') {
+                categoryCounts = await AssetModel.getCountByCategory();
+                categorySummary = await AssetModel.getCategorySummary();
+            }
             res.render('admin/assets', {
-                title: 'Assets - CMS', currentPage: view === 'catalogue' ? 'asset-catalogue' : view === 'employee' ? 'employee-assets' : view === 'stock' ? 'stock' : 'branch-assets',
-                assets, items, makes, models, branches, employees, view,
+                title: 'Assets - CMS',
+                currentPage: view === 'catalogue' ? 'asset-catalogue' : view === 'employee' ? 'employee-assets' : view === 'stock' ? 'stock' : view === 'dashboard' ? 'asset-dashboard' : 'branch-assets',
+                assets, items, makes, models, branches, employees, categories, categoryCounts, categorySummary, view,
                 success: req.query.success, error: req.query.error
             });
         } catch (err) { console.error(err); res.status(500).send('Server Error'); }
     },
     createAsset: async (req, res) => {
         try {
+            // Auto-generate asset code if not manually specified
+            if (!req.body.asset_code || req.body.asset_code === 'auto') {
+                // Get item info for code generation
+                const items = await AssetModel.getItems();
+                const item = items.find(i => i.id == req.body.item_id);
+                const branches = await BranchModel.findAll();
+                const branch = branches.find(b => b.branch_code === req.body.branch_code);
+                const codeData = {
+                    item_code: item ? item.item_code : '',
+                    serial_number: req.body.serial_number,
+                    branch_code: req.body.branch_code,
+                    channel_code: branch ? branch.channel_code : 'HO',
+                    asset_type: req.body.asset_type,
+                    count: req.body.count
+                };
+                req.body.asset_code = await AssetCodeGenerator.generate(codeData);
+            }
             await AssetModel.create(req.body);
             await NotificationService.logActivity(req.session.user.id, 'Assets', 'Create', `Created asset ${req.body.asset_code}`);
-            res.redirect('/admin/assets?success=Asset created successfully');
+            res.redirect('/admin/assets?view=branch&success=Asset created successfully');
         } catch (err) { console.error(err); res.redirect('/admin/assets?error=' + encodeURIComponent(err.message)); }
     },
     updateAsset: async (req, res) => {
@@ -124,10 +149,16 @@ module.exports = {
             res.redirect('/admin/assets?success=Asset deleted successfully');
         } catch (err) { console.error(err); res.redirect('/admin/assets?error=' + encodeURIComponent(err.message)); }
     },
+    createCategory: async (req, res) => {
+        try {
+            await AssetModel.createCategory(req.body);
+            res.redirect('/admin/assets?view=catalogue&success=Category created successfully');
+        } catch (err) { res.redirect('/admin/assets?view=catalogue&error=' + encodeURIComponent(err.message)); }
+    },
     createItem: async (req, res) => {
         try {
             await AssetModel.createItem(req.body);
-            res.redirect('/admin/assets?view=catalogue&success=Item created successfully');
+            res.redirect('/admin/assets?view=catalogue&success=Subcategory created successfully');
         } catch (err) { res.redirect('/admin/assets?view=catalogue&error=' + encodeURIComponent(err.message)); }
     },
     createMake: async (req, res) => {

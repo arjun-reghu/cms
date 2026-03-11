@@ -32,10 +32,9 @@
                                 <table class="data-table" id="branchTable">
                                     <thead>
                                         <tr>
+                                            <th>Channel</th>
                                             <th>Branch Code</th>
                                             <th>Branch Name</th>
-                                            <th>Channel</th>
-                                            <th>Contact</th>
                                             <th>ISP</th>
                                             <th>Status</th>
                                             <th>Actions</th>
@@ -44,24 +43,26 @@
                                     <tbody>
                                         <% if (branches.length===0) { %>
                                             <tr>
-                                                <td colspan="7" class="empty-state"><i class="fas fa-building"></i>
+                                                <td colspan="6" class="empty-state"><i class="fas fa-building"></i>
                                                     <p>No branches found</p>
                                                 </td>
                                             </tr>
                                             <% } %>
-                                                <% branches.forEach(branch=> { %>
+                                                <% branches.forEach((branch, idx)=> { %>
                                                     <tr>
-                                                        <td><strong>
-                                                                <%= branch.branch_code %>
-                                                            </strong></td>
-                                                        <td>
-                                                            <%= branch.branch_name %>
-                                                        </td>
                                                         <td>
                                                             <%= branch.channel_code || '-' %>
                                                         </td>
                                                         <td>
-                                                            <%= branch.contact_number || '-' %>
+                                                            <a href="#" class="branch-code-link"
+                                                                onclick="viewBranch(branchData[<%= idx %>]); return false;">
+                                                                <strong>
+                                                                    <%= branch.branch_code %>
+                                                                </strong>
+                                                            </a>
+                                                        </td>
+                                                        <td>
+                                                            <%= branch.branch_name %>
                                                         </td>
                                                         <td>
                                                             <%= branch.isp || '-' %>
@@ -71,7 +72,7 @@
                                                             </span></td>
                                                         <td>
                                                             <button class="btn btn-sm btn-outline"
-                                                                onclick="editBranch(<%- JSON.stringify(branch) %>)"><i
+                                                                onclick="editBranch(branchData[<%= idx %>])"><i
                                                                     class="fas fa-edit"></i></button>
                                                             <form action="/admin/branches/delete/<%= branch.id %>"
                                                                 method="POST" style="display:inline;"
@@ -84,6 +85,19 @@
                                                     <% }) %>
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+
+                        <!-- View Branch Detail Modal -->
+                        <div class="modal-overlay" id="viewBranchModal">
+                            <div class="modal">
+                                <div class="modal-header">
+                                    <h3><i class="fas fa-building"></i> Branch Details</h3>
+                                    <button class="modal-close" onclick="closeModal('viewBranchModal')">&times;</button>
+                                </div>
+                                <div id="branchDetailContent">
+                                    <!-- Filled by JS -->
+                                </div>
                             </div>
                         </div>
 
@@ -112,8 +126,18 @@
                                     <div class="form-row">
                                         <div class="form-group"><label>Pincode</label><input type="text" name="pincode"
                                                 class="form-control"></div>
-                                        <div class="form-group"><label>ISP</label><input type="text" name="isp"
-                                                class="form-control"></div>
+                                        <div class="form-group"><label>ISP</label>
+                                            <select name="isp" class="form-control">
+                                                <option value="">Select ISP</option>
+                                                <option value="Airtel">Airtel</option>
+                                                <option value="Tata">Tata</option>
+                                                <option value="Jio">Jio</option>
+                                                <option value="BSNL">BSNL</option>
+                                                <option value="Railwire">Railwire</option>
+                                                <option value="ACT">ACT</option>
+                                                <option value="Others">Others</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group"><label>IP Address</label><input type="text"
@@ -154,8 +178,13 @@
                                     </div>
                                     <div class="form-group"><label>Updates / Notes</label><textarea name="updates"
                                             class="form-control" rows="2"></textarea></div>
-                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save
-                                        Branch</button>
+                                    <div style="display:flex;gap:12px;">
+                                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save
+                                            Branch</button>
+                                        <button type="button" class="btn btn-outline"
+                                            onclick="closeModal('addBranchModal')"><i class="fas fa-times"></i>
+                                            Discard</button>
+                                    </div>
                                 </form>
                             </div>
                         </div>
@@ -186,8 +215,18 @@
                                     <div class="form-row">
                                         <div class="form-group"><label>Pincode</label><input type="text" name="pincode"
                                                 class="form-control" id="eb_pincode"></div>
-                                        <div class="form-group"><label>ISP</label><input type="text" name="isp"
-                                                class="form-control" id="eb_isp"></div>
+                                        <div class="form-group"><label>ISP</label>
+                                            <select name="isp" class="form-control" id="eb_isp">
+                                                <option value="">Select ISP</option>
+                                                <option value="Airtel">Airtel</option>
+                                                <option value="Tata">Tata</option>
+                                                <option value="Jio">Jio</option>
+                                                <option value="BSNL">BSNL</option>
+                                                <option value="Railwire">Railwire</option>
+                                                <option value="ACT">ACT</option>
+                                                <option value="Others">Others</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group"><label>IP Address</label><input type="text"
@@ -235,16 +274,103 @@
                                     </div>
                                     <div class="form-group"><label>Updates / Notes</label><textarea name="updates"
                                             class="form-control" id="eb_updates" rows="2"></textarea></div>
-                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update
-                                        Branch</button>
+                                    <div style="display:flex;gap:12px;">
+                                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update
+                                            Branch</button>
+                                        <button type="button" class="btn btn-outline"
+                                            onclick="closeModal('editBranchModal')"><i class="fas fa-times"></i>
+                                            Discard</button>
+                                    </div>
                                 </form>
                             </div>
                         </div>
 
+                        <style>
+                            .branch-code-link {
+                                color: var(--accent);
+                                text-decoration: none;
+                            }
+
+                            .branch-code-link:hover {
+                                text-decoration: underline;
+                            }
+
+                            .detail-grid {
+                                display: grid;
+                                grid-template-columns: 1fr 1fr;
+                                gap: 16px;
+                            }
+
+                            .detail-item {
+                                margin-bottom: 8px;
+                            }
+
+                            .detail-item label {
+                                font-size: 0.75rem;
+                                color: var(--text-muted);
+                                text-transform: uppercase;
+                                letter-spacing: 0.05em;
+                                display: block;
+                                margin-bottom: 2px;
+                            }
+
+                            .detail-item span {
+                                font-size: 0.9rem;
+                                color: var(--text-primary);
+                            }
+
+                            .detail-divider {
+                                grid-column: 1 / -1;
+                                border-top: 1px solid var(--border-color);
+                                margin: 4px 0;
+                            }
+                        </style>
+
+                        <script type="application/json" id="branchDataStore"><%- JSON.stringify(branches) %></script>
+
                         <script>
+                            var branchData = JSON.parse(document.getElementById('branchDataStore').textContent);
                             function openModal(id) { document.getElementById(id).classList.add('active'); }
                             function closeModal(id) { document.getElementById(id).classList.remove('active'); }
                             function formatDate(d) { return d ? d.substring(0, 10) : ''; }
+                            function formatDateDisplay(d) {
+                                if (!d) return '-';
+                                const date = new Date(d);
+                                return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                            }
+
+                            function viewBranch(b) {
+                                const html = `
+                                    <div class="detail-grid">
+                                        <div class="detail-item"><label>Branch Code</label><span><strong>${b.branch_code}</strong></span></div>
+                                        <div class="detail-item"><label>Branch Name</label><span>${b.branch_name || '-'}</span></div>
+                                        <div class="detail-item"><label>Channel Code</label><span>${b.channel_code || '-'}</span></div>
+                                        <div class="detail-item"><label>Status</label><span class="badge badge-${b.status}">${b.status}</span></div>
+                                        <div class="detail-divider"></div>
+                                        <div class="detail-item"><label>Address</label><span>${b.address || '-'}</span></div>
+                                        <div class="detail-item"><label>Pincode</label><span>${b.pincode || '-'}</span></div>
+                                        <div class="detail-item"><label>Contact Number</label><span>${b.contact_number || '-'}</span></div>
+                                        <div class="detail-item"><label>KSEB Consumer No</label><span>${b.kseb_consumer_no || '-'}</span></div>
+                                        <div class="detail-divider"></div>
+                                        <div class="detail-item"><label>ISP</label><span>${b.isp || '-'}</span></div>
+                                        <div class="detail-item"><label>ISP LC</label><span>${b.isp_lc || '-'}</span></div>
+                                        <div class="detail-item"><label>IP Address</label><span>${b.ip_address || '-'}</span></div>
+                                        <div class="detail-item"><label>Circuit ID</label><span>${b.circuit_id || '-'}</span></div>
+                                        <div class="detail-item"><label>Billing Account</label><span>${b.billing_account || '-'}</span></div>
+                                        <div class="detail-divider"></div>
+                                        <div class="detail-item"><label>Branch Opening Date</label><span>${formatDateDisplay(b.branch_opening_date)}</span></div>
+                                        <div class="detail-item"><label>Internet Activated</label><span>${formatDateDisplay(b.internet_activated_date)}</span></div>
+                                        <div class="detail-item"><label>Agreement Start</label><span>${formatDateDisplay(b.agreement_start_date)}</span></div>
+                                        <div class="detail-item"><label>Agreement End</label><span>${formatDateDisplay(b.agreement_end_date)}</span></div>
+                                        <div class="detail-item"><label>Disconnected Date</label><span>${formatDateDisplay(b.disconnected_date)}</span></div>
+                                        <div class="detail-divider"></div>
+                                        <div class="detail-item" style="grid-column:1/-1;"><label>Updates / Notes</label><span>${b.updates || '-'}</span></div>
+                                    </div>
+                                `;
+                                document.getElementById('branchDetailContent').innerHTML = html;
+                                openModal('viewBranchModal');
+                            }
+
                             function editBranch(b) {
                                 document.getElementById('editBranchForm').action = '/admin/branches/update/' + b.id;
                                 document.getElementById('eb_branch_code').value = b.branch_code;

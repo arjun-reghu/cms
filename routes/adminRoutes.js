@@ -26,6 +26,7 @@ router.get('/assets', adminCtrl.assets);
 router.post('/assets', adminCtrl.createAsset);
 router.post('/assets/update/:id', adminCtrl.updateAsset);
 router.post('/assets/delete/:id', adminCtrl.deleteAsset);
+router.post('/assets/category', adminCtrl.createCategory);
 router.post('/assets/item', adminCtrl.createItem);
 router.post('/assets/make', adminCtrl.createMake);
 router.post('/assets/model', adminCtrl.createModel);

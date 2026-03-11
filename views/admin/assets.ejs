@@ -3,7 +3,7 @@
 
         <div class="page-header">
             <h2>Assets</h2>
-            <p>Manage IT and Non-IT assets</p>
+            <p>Manage IT and Admin assets</p>
         </div>
 
         <% if (success) { %>
@@ -20,16 +20,19 @@
                         <!-- View Tabs -->
                         <div class="action-bar">
                             <div class="filter-group">
+                                <a href="/admin/assets?view=dashboard"
+                                    class="btn <%= view === 'dashboard' ? 'btn-primary' : 'btn-outline' %>"><i
+                                        class="fas fa-chart-bar"></i> Dashboard</a>
                                 <a href="/admin/assets?view=branch"
                                     class="btn <%= view === 'branch' ? 'btn-primary' : 'btn-outline' %>">Branch
                                     Assets</a>
-                                <a href="/admin/assets?view=catalogue"
-                                    class="btn <%= view === 'catalogue' ? 'btn-primary' : 'btn-outline' %>">Catalogue</a>
                                 <a href="/admin/assets?view=employee"
                                     class="btn <%= view === 'employee' ? 'btn-primary' : 'btn-outline' %>">Employee
                                     Assets</a>
                                 <a href="/admin/assets?view=stock"
                                     class="btn <%= view === 'stock' ? 'btn-primary' : 'btn-outline' %>">Stock</a>
+                                <a href="/admin/assets?view=catalogue"
+                                    class="btn <%= view === 'catalogue' ? 'btn-primary' : 'btn-outline' %>">Catalogue</a>
                             </div>
                             <% if (view==='branch' || view==='stock' ) { %>
                                 <button class="btn btn-primary" onclick="openModal('addAssetModal')"><i
@@ -37,571 +40,982 @@
                                 <% } %>
                         </div>
 
-                        <% if (view==='catalogue' ) { %>
-                            <!-- Catalogue View: Items, Makes, Models -->
-                            <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
-                                <div class="card">
-                                    <div class="card-header"><span class="card-title">Items (Categories)</span>
-                                        <button class="btn btn-sm btn-primary" onclick="openModal('addItemModal')"><i
-                                                class="fas fa-plus"></i></button>
-                                    </div>
-                                    <div class="table-wrapper">
-                                        <table class="data-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Name</th>
-                                                    <th>Code</th>
-                                                    <th>Type</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <% items.forEach(item=> { %>
-                                                    <tr>
-                                                        <td>
-                                                            <%= item.item_name %>
-                                                        </td>
-                                                        <td>
-                                                            <%= item.item_code %>
-                                                        </td>
-                                                        <td><span
-                                                                class="badge badge-<%= item.asset_type === 'IT' ? 'active' : 'assigned' %>">
-                                                                <%= item.asset_type %>
-                                                            </span></td>
-                                                    </tr>
-                                                    <% }) %>
-                                                        <% if (items.length===0) { %>
-                                                            <tr>
-                                                                <td colspan="3"
-                                                                    style="color:var(--text-muted);text-align:center;">
-                                                                    No items</td>
-                                                            </tr>
-                                                            <% } %>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                <div class="card">
-                                    <div class="card-header"><span class="card-title">Makes</span>
-                                        <button class="btn btn-sm btn-primary" onclick="openModal('addMakeModal')"><i
-                                                class="fas fa-plus"></i></button>
-                                    </div>
-                                    <div class="table-wrapper">
-                                        <table class="data-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Make Name</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <% makes.forEach(mk=> { %><tr>
-                                                        <td>
-                                                            <%= mk.make_name %>
-                                                        </td>
-                                                    </tr>
-                                                    <% }) %>
-                                                        <% if (makes.length===0) { %>
-                                                            <tr>
-                                                                <td style="color:var(--text-muted);text-align:center;">
-                                                                    No makes</td>
-                                                            </tr>
-                                                            <% } %>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                <div class="card">
-                                    <div class="card-header"><span class="card-title">Models</span>
-                                        <button class="btn btn-sm btn-primary" onclick="openModal('addModelModal')"><i
-                                                class="fas fa-plus"></i></button>
-                                    </div>
-                                    <div class="table-wrapper">
-                                        <table class="data-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Model</th>
-                                                    <th>Make</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <% models.forEach(md=> { %><tr>
-                                                        <td>
-                                                            <%= md.model_name %>
-                                                        </td>
-                                                        <td>
-                                                            <%= md.make_name %>
-                                                        </td>
-                                                    </tr>
-                                                    <% }) %>
-                                                        <% if (models.length===0) { %>
-                                                            <tr>
-                                                                <td colspan="2"
-                                                                    style="color:var(--text-muted);text-align:center;">
-                                                                    No models</td>
-                                                            </tr>
-                                                            <% } %>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <% } else if (view==='employee' ) { %>
-                                <!-- Employee Assets View -->
-                                <div class="card">
-                                    <div class="card-header"><span class="card-title">Assign Asset to Employee</span>
-                                    </div>
-                                    <form action="/admin/assets/assign" method="POST">
-                                        <div class="form-row">
-                                            <div class="form-group"><label>Employee</label>
-                                                <select name="employee_code" class="form-control" required>
-                                                    <option value="">Select Employee</option>
-                                                    <% employees.forEach(e=> { %><option value="<%= e.employee_code %>">
-                                                            <%= e.employee_code %> - <%= e.employee_name %>
-                                                        </option>
-                                                        <% }) %>
-                                                </select>
+                        <% if (view==='dashboard' ) { %>
+                            <!-- Asset Dashboard -->
+                            <% if (categorySummary && categorySummary.length> 0) { %>
+                                <h3
+                                    style="color:var(--text-secondary);margin-bottom:16px;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.05em;">
+                                    Category Summary</h3>
+                                <div class="stats-grid"
+                                    style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); margin-bottom:24px;">
+                                    <% categorySummary.forEach(cs=> { %>
+                                        <div class="stat-card <%= cs.asset_type === 'IT' ? 'cyan' : 'purple' %>">
+                                            <div class="stat-icon"><i
+                                                    class="fas <%= cs.asset_type === 'IT' ? 'fa-microchip' : 'fa-chair' %>"></i>
                                             </div>
-                                            <div class="form-group"><label>Asset</label>
-                                                <select name="asset_id" class="form-control" required>
-                                                    <option value="">Select Asset</option>
-                                                    <% assets.filter(a=> a.status === 'stock').forEach(a => { %><option
-                                                            value="<%= a.id %>">
-                                                            <%= a.asset_code %> - <%= a.item_name %>
-                                                        </option>
-                                                        <% }) %>
-                                                </select>
+                                            <div class="stat-info">
+                                                <h3>
+                                                    <%= cs.total_count %>
+                                                </h3>
+                                                <p>
+                                                    <%= cs.category_name %>
+                                                </p>
                                             </div>
-                                            <div class="form-group"><label>Date</label><input type="date"
-                                                    name="assigned_date" class="form-control"
-                                                    value="<%= new Date().toISOString().substring(0,10) %>"></div>
                                         </div>
-                                        <div class="form-group"><label>Remarks</label><input type="text" name="remarks"
-                                                class="form-control"></div>
-                                        <button type="submit" class="btn btn-success"><i class="fas fa-link"></i> Assign
-                                            Asset</button>
-                                    </form>
+                                        <% }) %>
                                 </div>
-                                <div class="card" style="margin-top:20px;">
-                                    <div class="card-header"><span class="card-title">Currently Assigned Assets</span>
-                                    </div>
-                                    <div class="table-wrapper">
-                                        <table class="data-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Asset Code</th>
-                                                    <th>Category</th>
-                                                    <th>Make</th>
-                                                    <th>Model</th>
-                                                    <th>Branch</th>
-                                                    <th>Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <% assets.filter(a=> a.status === 'assigned').forEach(a => { %>
-                                                    <tr>
-                                                        <td>
-                                                            <%= a.asset_code %>
-                                                        </td>
-                                                        <td>
-                                                            <%= a.item_name %>
-                                                        </td>
-                                                        <td>
-                                                            <%= a.make_name %>
-                                                        </td>
-                                                        <td>
-                                                            <%= a.model_name || '-' %>
-                                                        </td>
-                                                        <td>
-                                                            <%= a.branch_name || '-' %>
-                                                        </td>
-                                                        <td><span class="badge badge-assigned">Assigned</span></td>
-                                                    </tr>
-                                                    <% }) %>
-                                                        <% if (assets.filter(a=> a.status === 'assigned').length === 0)
-                                                            { %><tr>
-                                                                <td colspan="6" class="empty-state">
-                                                                    <p>No assigned assets</p>
-                                                                </td>
-                                                            </tr>
-                                                            <% } %>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                                <% } %>
 
-                                <% } else { %>
-                                    <!-- Branch Assets / Stock View -->
-                                    <div class="card">
-                                        <div class="action-bar" style="margin-bottom:0;">
-                                            <div class="search-box"><i class="fas fa-search"></i><input type="text"
-                                                    placeholder="Search assets..."
-                                                    onkeyup="filterTable('assetTable', this.value)"></div>
+                                    <% if (categoryCounts && categoryCounts.length> 0) { %>
+                                        <h3
+                                            style="color:var(--text-secondary);margin-bottom:16px;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.05em;">
+                                            Subcategory Breakdown</h3>
+                                        <div class="stats-grid"
+                                            style="grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); margin-bottom:24px;">
+                                            <% categoryCounts.forEach(cc=> { %>
+                                                <div class="stat-card <%= cc.asset_type === 'IT' ? 'blue' : 'yellow' %>"
+                                                    style="padding:16px;">
+                                                    <div class="stat-info" style="width:100%;">
+                                                        <h3 style="font-size:1.3rem;">
+                                                            <%= cc.total_count %>
+                                                        </h3>
+                                                        <p style="font-size:0.75rem;">
+                                                            <%= cc.item_name || cc.category_name %>
+                                                        </p>
+                                                        <span
+                                                            class="badge badge-<%= cc.asset_type === 'IT' ? 'active' : 'assigned' %>"
+                                                            style="margin-top:4px;font-size:0.6rem;">
+                                                            <%= cc.asset_type %>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <% }) %>
                                         </div>
-                                        <div class="table-wrapper" style="margin-top:16px;">
-                                            <table class="data-table" id="assetTable">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Asset Code</th>
-                                                        <th>Category</th>
-                                                        <th>Make</th>
-                                                        <th>Model</th>
-                                                        <th>Serial No</th>
-                                                        <th>Branch</th>
-                                                        <th>Type</th>
-                                                        <th>Status</th>
-                                                        <th>Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <% let filteredAssets=assets; if (view==='stock' )
-                                                        filteredAssets=assets.filter(a=> a.status === 'stock');
-                                                        %>
-                                                        <% filteredAssets.forEach(a=> { %>
+                                        <% } %>
+
+                                            <!-- Global Asset Table -->
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <span class="card-title">All Assets</span>
+                                                    <div class="search-box" style="max-width:250px;">
+                                                        <i class="fas fa-search"></i>
+                                                        <input type="text" placeholder="Search..."
+                                                            onkeyup="filterTable('dashAssetTable', this.value)">
+                                                    </div>
+                                                </div>
+                                                <div class="table-wrapper">
+                                                    <table class="data-table" id="dashAssetTable">
+                                                        <thead>
                                                             <tr>
-                                                                <td><strong>
-                                                                        <%= a.asset_code %>
-                                                                    </strong></td>
-                                                                <td>
-                                                                    <%= a.item_name || '-' %>
-                                                                </td>
-                                                                <td>
-                                                                    <%= a.make_name || '-' %>
-                                                                </td>
-                                                                <td>
-                                                                    <%= a.model_name || '-' %>
-                                                                </td>
-                                                                <td>
-                                                                    <%= a.serial_number || '-' %>
-                                                                </td>
-                                                                <td>
-                                                                    <%= a.branch_name || '-' %>
-                                                                </td>
-                                                                <td><span
-                                                                        class="badge badge-<%= a.asset_type === 'IT' ? 'active' : 'assigned' %>">
-                                                                        <%= a.asset_type %>
-                                                                    </span></td>
-                                                                <td><span class="badge badge-<%= a.status %>">
-                                                                        <%= a.status %>
-                                                                    </span></td>
-                                                                <td>
-                                                                    <button class="btn btn-sm btn-outline"
-                                                                        onclick="editAsset(<%- JSON.stringify(a) %>)"><i
-                                                                            class="fas fa-edit"></i></button>
-                                                                    <button class="btn btn-sm btn-warning"
-                                                                        onclick="transferAsset(<%- JSON.stringify(a) %>)"><i
-                                                                            class="fas fa-exchange-alt"></i></button>
-                                                                    <form action="/admin/assets/delete/<%= a.id %>"
-                                                                        method="POST" style="display:inline;"
-                                                                        onsubmit="return confirmDelete('Delete this asset?')">
-                                                                        <button type="submit"
-                                                                            class="btn btn-sm btn-danger"><i
-                                                                                class="fas fa-trash"></i></button>
-                                                                    </form>
-                                                                </td>
+                                                                <th>Branch Code</th>
+                                                                <th>Branch Name</th>
+                                                                <th>Asset Type</th>
+                                                                <th>Category</th>
+                                                                <th>Sub Category</th>
                                                             </tr>
-                                                            <% }) %>
-                                                                <% if (filteredAssets.length===0) { %>
+                                                        </thead>
+                                                        <tbody>
+                                                            <% assets.forEach(a=> { %>
+                                                                <tr>
+                                                                    <td><strong>
+                                                                            <%= a.branch_code || '-' %>
+                                                                        </strong></td>
+                                                                    <td>
+                                                                        <%= a.branch_name || '-' %>
+                                                                    </td>
+                                                                    <td><span
+                                                                            class="badge badge-<%= a.asset_type === 'IT' ? 'active' : 'assigned' %>">
+                                                                            <%= a.asset_type %>
+                                                                        </span></td>
+                                                                    <td>
+                                                                        <%= a.category_name || '-' %>
+                                                                    </td>
+                                                                    <td>
+                                                                        <%= a.item_name || '-' %>
+                                                                    </td>
+                                                                </tr>
+                                                                <% }) %>
+                                                                    <% if (assets.length===0) { %>
+                                                                        <tr>
+                                                                            <td colspan="5" class="empty-state"><i
+                                                                                    class="fas fa-box-open"></i>
+                                                                                <p>No assets found</p>
+                                                                            </td>
+                                                                        </tr>
+                                                                        <% } %>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+
+                                            <% } else if (view==='catalogue' ) { %>
+                                                <!-- Catalogue View: Categories, Subcategories, Makes, Models -->
+                                                <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+                                                    <!-- Categories -->
+                                                    <div class="card">
+                                                        <div class="card-header"><span
+                                                                class="card-title">Categories</span>
+                                                            <button class="btn btn-sm btn-primary"
+                                                                onclick="openModal('addCategoryModal')"><i
+                                                                    class="fas fa-plus"></i></button>
+                                                        </div>
+                                                        <div class="table-wrapper">
+                                                            <table class="data-table">
+                                                                <thead>
                                                                     <tr>
-                                                                        <td colspan="9" class="empty-state"><i
-                                                                                class="fas fa-box-open"></i>
-                                                                            <p>No assets found</p>
-                                                                        </td>
+                                                                        <th>Name</th>
+                                                                        <th>Code</th>
+                                                                        <th>Type</th>
                                                                     </tr>
-                                                                    <% } %>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                    <% } %>
-
-                                        <!-- Add Asset Modal -->
-                                        <div class="modal-overlay" id="addAssetModal">
-                                            <div class="modal">
-                                                <div class="modal-header">
-                                                    <h3>Add New Asset</h3><button class="modal-close"
-                                                        onclick="closeModal('addAssetModal')">&times;</button>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <% categories.forEach(cat=> { %>
+                                                                        <tr>
+                                                                            <td>
+                                                                                <%= cat.category_name %>
+                                                                            </td>
+                                                                            <td>
+                                                                                <%= cat.category_code %>
+                                                                            </td>
+                                                                            <td><span
+                                                                                    class="badge badge-<%= cat.asset_type === 'IT' ? 'active' : 'assigned' %>">
+                                                                                    <%= cat.asset_type %>
+                                                                                </span></td>
+                                                                        </tr>
+                                                                        <% }) %>
+                                                                            <% if (categories.length===0) { %>
+                                                                                <tr>
+                                                                                    <td colspan="3"
+                                                                                        style="color:var(--text-muted);text-align:center;">
+                                                                                        No categories</td>
+                                                                                </tr>
+                                                                                <% } %>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Subcategories -->
+                                                    <div class="card">
+                                                        <div class="card-header"><span class="card-title">Sub
+                                                                Categories</span>
+                                                            <button class="btn btn-sm btn-primary"
+                                                                onclick="openModal('addItemModal')"><i
+                                                                    class="fas fa-plus"></i></button>
+                                                        </div>
+                                                        <div class="table-wrapper">
+                                                            <table class="data-table">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Category</th>
+                                                                        <th>Sub Cat Name</th>
+                                                                        <th>Sub Cat Code</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <% items.forEach(item=> { %>
+                                                                        <tr>
+                                                                            <td>
+                                                                                <%= item.category_name || '-' %>
+                                                                            </td>
+                                                                            <td>
+                                                                                <%= item.item_name %>
+                                                                            </td>
+                                                                            <td>
+                                                                                <%= item.item_code %>
+                                                                            </td>
+                                                                        </tr>
+                                                                        <% }) %>
+                                                                            <% if (items.length===0) { %>
+                                                                                <tr>
+                                                                                    <td colspan="3"
+                                                                                        style="color:var(--text-muted);text-align:center;">
+                                                                                        No subcategories</td>
+                                                                                </tr>
+                                                                                <% } %>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Makes -->
+                                                    <div class="card">
+                                                        <div class="card-header"><span class="card-title">Makes</span>
+                                                            <button class="btn btn-sm btn-primary"
+                                                                onclick="openModal('addMakeModal')"><i
+                                                                    class="fas fa-plus"></i></button>
+                                                        </div>
+                                                        <div class="table-wrapper">
+                                                            <table class="data-table">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Make Name</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <% makes.forEach(mk=> { %><tr>
+                                                                            <td>
+                                                                                <%= mk.make_name %>
+                                                                            </td>
+                                                                        </tr>
+                                                                        <% }) %>
+                                                                            <% if (makes.length===0) { %>
+                                                                                <tr>
+                                                                                    <td
+                                                                                        style="color:var(--text-muted);text-align:center;">
+                                                                                        No makes</td>
+                                                                                </tr>
+                                                                                <% } %>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Models -->
+                                                    <div class="card">
+                                                        <div class="card-header"><span class="card-title">Models</span>
+                                                            <button class="btn btn-sm btn-primary"
+                                                                onclick="openModal('addModelModal')"><i
+                                                                    class="fas fa-plus"></i></button>
+                                                        </div>
+                                                        <div class="table-wrapper">
+                                                            <table class="data-table">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Model</th>
+                                                                        <th>Make</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <% models.forEach(md=> { %><tr>
+                                                                            <td>
+                                                                                <%= md.model_name %>
+                                                                            </td>
+                                                                            <td>
+                                                                                <%= md.make_name %>
+                                                                            </td>
+                                                                        </tr>
+                                                                        <% }) %>
+                                                                            <% if (models.length===0) { %>
+                                                                                <tr>
+                                                                                    <td colspan="2"
+                                                                                        style="color:var(--text-muted);text-align:center;">
+                                                                                        No models</td>
+                                                                                </tr>
+                                                                                <% } %>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <form action="/admin/assets" method="POST">
-                                                    <div class="form-row">
-                                                        <div class="form-group"><label>Asset Code *</label><input
-                                                                type="text" name="asset_code" class="form-control"
-                                                                required></div>
-                                                        <div class="form-group"><label>Asset Type *</label>
-                                                            <select name="asset_type" class="form-control" required>
-                                                                <option value="IT">IT</option>
-                                                                <option value="NON_IT">Non-IT</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-row">
-                                                        <div class="form-group"><label>Category</label>
-                                                            <select name="item_id" class="form-control">
-                                                                <option value="">Select</option>
-                                                                <% items.forEach(i=> { %><option value="<%= i.id %>">
-                                                                        <%= i.item_name %> (<%= i.item_code %>)
-                                                                    </option>
-                                                                    <% }) %>
-                                                            </select>
-                                                        </div>
-                                                        <div class="form-group"><label>Branch</label>
-                                                            <select name="branch_code" class="form-control">
-                                                                <option value="">Select</option>
-                                                                <% branches.forEach(b=> { %><option
-                                                                        value="<%= b.branch_code %>">
-                                                                        <%= b.branch_code %> - <%= b.branch_name %>
-                                                                    </option>
-                                                                    <% }) %>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-row">
-                                                        <div class="form-group"><label>Make</label>
-                                                            <select name="make_id" class="form-control"
-                                                                id="addMakeSelect">
-                                                                <option value="">Select</option>
-                                                                <% makes.forEach(m=> { %><option value="<%= m.id %>">
-                                                                        <%= m.make_name %>
-                                                                    </option>
-                                                                    <% }) %>
-                                                            </select>
-                                                        </div>
-                                                        <div class="form-group"><label>Model</label>
-                                                            <select name="model_id" class="form-control">
-                                                                <option value="">Select</option>
-                                                                <% models.forEach(m=> { %><option value="<%= m.id %>">
-                                                                        <%= m.model_name %> (<%= m.make_name %>)
-                                                                    </option>
-                                                                    <% }) %>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-row">
-                                                        <div class="form-group"><label>Serial Number</label><input
-                                                                type="text" name="serial_number" class="form-control">
-                                                        </div>
-                                                        <div class="form-group"><label>Count</label><input type="number"
-                                                                name="count" class="form-control" value="1" min="1">
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-group"><label>Status</label>
-                                                        <select name="status" class="form-control">
-                                                            <option value="stock">Stock</option>
-                                                            <option value="assigned">Assigned</option>
-                                                            <option value="scrap">Scrap</option>
-                                                        </select>
-                                                    </div>
-                                                    <button type="submit" class="btn btn-primary"><i
-                                                            class="fas fa-save"></i> Save Asset</button>
-                                                </form>
-                                            </div>
-                                        </div>
 
-                                        <!-- Edit Asset Modal -->
-                                        <div class="modal-overlay" id="editAssetModal">
-                                            <div class="modal">
-                                                <div class="modal-header">
-                                                    <h3>Edit Asset</h3><button class="modal-close"
-                                                        onclick="closeModal('editAssetModal')">&times;</button>
-                                                </div>
-                                                <form id="editAssetForm" method="POST">
-                                                    <div class="form-row">
-                                                        <div class="form-group"><label>Asset Code</label><input
-                                                                type="text" class="form-control" id="ea_asset_code"
-                                                                disabled></div>
-                                                        <div class="form-group"><label>Asset Type</label>
-                                                            <select name="asset_type" class="form-control"
-                                                                id="ea_asset_type">
-                                                                <option value="IT">IT</option>
-                                                                <option value="NON_IT">Non-IT</option>
-                                                            </select>
+                                                <% } else if (view==='employee' ) { %>
+                                                    <!-- Employee Assets View -->
+                                                    <div class="card">
+                                                        <div class="card-header"><span class="card-title">Assign Asset
+                                                                to Employee</span></div>
+                                                        <form action="/admin/assets/assign" method="POST">
+                                                            <div class="form-row">
+                                                                <div class="form-group"><label>Employee</label>
+                                                                    <select name="employee_code" class="form-control"
+                                                                        required>
+                                                                        <option value="">Select Employee</option>
+                                                                        <% employees.forEach(e=> { %><option
+                                                                                value="<%= e.employee_code %>">
+                                                                                <%= e.employee_code %> - <%=
+                                                                                        e.employee_name %>
+                                                                            </option>
+                                                                            <% }) %>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="form-group"><label>Asset</label>
+                                                                    <select name="asset_id" class="form-control"
+                                                                        required>
+                                                                        <option value="">Select Asset</option>
+                                                                        <% assets.filter(a=> a.status ===
+                                                                            'stock').forEach(a => { %><option
+                                                                                value="<%= a.id %>">
+                                                                                <%= a.asset_code %> - <%= a.item_name %>
+                                                                            </option>
+                                                                            <% }) %>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="form-group"><label>Date</label><input
+                                                                        type="date" name="assigned_date"
+                                                                        class="form-control"
+                                                                        value="<%= new Date().toISOString().substring(0,10) %>">
+                                                                </div>
+                                                            </div>
+                                                            <div class="form-group"><label>Remarks</label><input
+                                                                    type="text" name="remarks" class="form-control">
+                                                            </div>
+                                                            <button type="submit" class="btn btn-success"><i
+                                                                    class="fas fa-link"></i> Assign Asset</button>
+                                                        </form>
+                                                    </div>
+                                                    <div class="card" style="margin-top:20px;">
+                                                        <div class="card-header"><span class="card-title">Currently
+                                                                Assigned Assets</span></div>
+                                                        <div class="table-wrapper">
+                                                            <table class="data-table">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Asset Code</th>
+                                                                        <th>Category</th>
+                                                                        <th>Make</th>
+                                                                        <th>Model</th>
+                                                                        <th>Branch</th>
+                                                                        <th>Status</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <% assets.filter(a=> a.status ===
+                                                                        'assigned').forEach(a => { %>
+                                                                        <tr>
+                                                                            <td>
+                                                                                <%= a.asset_code %>
+                                                                            </td>
+                                                                            <td>
+                                                                                <%= a.item_name %>
+                                                                            </td>
+                                                                            <td>
+                                                                                <%= a.make_name %>
+                                                                            </td>
+                                                                            <td>
+                                                                                <%= a.model_name || '-' %>
+                                                                            </td>
+                                                                            <td>
+                                                                                <%= a.branch_name || '-' %>
+                                                                            </td>
+                                                                            <td><span
+                                                                                    class="badge badge-assigned">Assigned</span>
+                                                                            </td>
+                                                                        </tr>
+                                                                        <% }) %>
+                                                                            <% if (assets.filter(a=> a.status ===
+                                                                                'assigned').length === 0) { %>
+                                                                                <tr>
+                                                                                    <td colspan="6" class="empty-state">
+                                                                                        <p>No assigned assets</p>
+                                                                                    </td>
+                                                                                </tr>
+                                                                                <% } %>
+                                                                </tbody>
+                                                            </table>
                                                         </div>
                                                     </div>
-                                                    <div class="form-row">
-                                                        <div class="form-group"><label>Category</label>
-                                                            <select name="item_id" class="form-control" id="ea_item_id">
-                                                                <option value="">Select</option>
-                                                                <% items.forEach(i=> { %><option value="<%= i.id %>">
-                                                                        <%= i.item_name %>
-                                                                    </option>
-                                                                    <% }) %>
-                                                            </select>
-                                                        </div>
-                                                        <div class="form-group"><label>Branch</label>
-                                                            <select name="branch_code" class="form-control"
-                                                                id="ea_branch_code">
-                                                                <option value="">Select</option>
-                                                                <% branches.forEach(b=> { %><option
-                                                                        value="<%= b.branch_code %>">
-                                                                        <%= b.branch_code %>
-                                                                    </option>
-                                                                    <% }) %>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-row">
-                                                        <div class="form-group"><label>Make</label>
-                                                            <select name="make_id" class="form-control" id="ea_make_id">
-                                                                <option value="">Select</option>
-                                                                <% makes.forEach(m=> { %><option value="<%= m.id %>">
-                                                                        <%= m.make_name %>
-                                                                    </option>
-                                                                    <% }) %>
-                                                            </select>
-                                                        </div>
-                                                        <div class="form-group"><label>Model</label>
-                                                            <select name="model_id" class="form-control"
-                                                                id="ea_model_id">
-                                                                <option value="">Select</option>
-                                                                <% models.forEach(m=> { %><option value="<%= m.id %>">
-                                                                        <%= m.model_name %>
-                                                                    </option>
-                                                                    <% }) %>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-row">
-                                                        <div class="form-group"><label>Serial Number</label><input
-                                                                type="text" name="serial_number" class="form-control"
-                                                                id="ea_serial_number"></div>
-                                                        <div class="form-group"><label>Count</label><input type="number"
-                                                                name="count" class="form-control" id="ea_count" min="1">
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-group"><label>Status</label>
-                                                        <select name="status" class="form-control" id="ea_status">
-                                                            <option value="stock">Stock</option>
-                                                            <option value="assigned">Assigned</option>
-                                                            <option value="scrap">Scrap</option>
-                                                        </select>
-                                                    </div>
-                                                    <button type="submit" class="btn btn-primary"><i
-                                                            class="fas fa-save"></i> Update Asset</button>
-                                                </form>
-                                            </div>
-                                        </div>
 
-                                        <!-- Transfer Asset Modal -->
-                                        <div class="modal-overlay" id="transferModal">
-                                            <div class="modal">
-                                                <div class="modal-header">
-                                                    <h3>Transfer Asset</h3><button class="modal-close"
-                                                        onclick="closeModal('transferModal')">&times;</button>
-                                                </div>
-                                                <form action="/admin/assets/transfer" method="POST">
-                                                    <input type="hidden" name="asset_id" id="tr_asset_id">
-                                                    <input type="hidden" name="from_branch" id="tr_from_branch">
-                                                    <div class="form-group"><label>Asset</label><input type="text"
-                                                            class="form-control" id="tr_asset_code" disabled></div>
-                                                    <div class="form-group"><label>From Branch</label><input type="text"
-                                                            class="form-control" id="tr_from_display" disabled></div>
-                                                    <div class="form-group"><label>To Branch *</label>
-                                                        <select name="to_branch" class="form-control" required>
-                                                            <option value="">Select</option>
-                                                            <% branches.forEach(b=> { %><option
-                                                                    value="<%= b.branch_code %>">
-                                                                    <%= b.branch_code %> - <%= b.branch_name %>
-                                                                </option>
-                                                                <% }) %>
-                                                        </select>
-                                                    </div>
-                                                    <div class="form-group"><label>Remarks</label><input type="text"
-                                                            name="remarks" class="form-control"></div>
-                                                    <button type="submit" class="btn btn-warning"><i
-                                                            class="fas fa-exchange-alt"></i> Transfer</button>
-                                                </form>
-                                            </div>
-                                        </div>
+                                                    <% } else { %>
+                                                        <!-- Branch Assets / Stock View -->
+                                                        <div class="card">
+                                                            <div class="action-bar" style="margin-bottom:0;">
+                                                                <div class="search-box"><i
+                                                                        class="fas fa-search"></i><input type="text"
+                                                                        placeholder="Search assets..."
+                                                                        onkeyup="filterTable('assetTable', this.value)">
+                                                                </div>
+                                                            </div>
+                                                            <div class="table-wrapper" style="margin-top:16px;">
+                                                                <table class="data-table" id="assetTable">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>Asset Code</th>
+                                                                            <th>Category</th>
+                                                                            <th>Sub Category</th>
+                                                                            <th>Make</th>
+                                                                            <th>Model</th>
+                                                                            <th>Serial No</th>
+                                                                            <th>Branch</th>
+                                                                            <th>Type</th>
+                                                                            <th>Status</th>
+                                                                            <th>Actions</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <% let filteredAssets=assets; if (view==='stock'
+                                                                            ) filteredAssets=assets.filter(a=> a.status
+                                                                            === 'stock'); %>
+                                                                            <% filteredAssets.forEach(a=> { %>
+                                                                                <tr>
+                                                                                    <td><strong>
+                                                                                            <%= a.asset_code %>
+                                                                                        </strong></td>
+                                                                                    <td>
+                                                                                        <%= a.category_name || '-' %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= a.item_name || '-' %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= a.make_name || '-' %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= a.model_name || '-' %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= a.serial_number || '-' %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= a.branch_name || '-' %>
+                                                                                    </td>
+                                                                                    <td><span
+                                                                                            class="badge badge-<%= a.asset_type === 'IT' ? 'active' : 'assigned' %>">
+                                                                                            <%= a.asset_type %>
+                                                                                        </span></td>
+                                                                                    <td><span
+                                                                                            class="badge badge-<%= a.status %>">
+                                                                                            <%= a.status %>
+                                                                                        </span></td>
+                                                                                    <td>
+                                                                                        <button
+                                                                                            class="btn btn-sm btn-outline"
+                                                                                            onclick="editAsset(<%- JSON.stringify(a) %>)"><i
+                                                                                                class="fas fa-edit"></i></button>
+                                                                                        <button
+                                                                                            class="btn btn-sm btn-warning"
+                                                                                            onclick="transferAsset(<%- JSON.stringify(a) %>)"><i
+                                                                                                class="fas fa-exchange-alt"></i></button>
+                                                                                        <form
+                                                                                            action="/admin/assets/delete/<%= a.id %>"
+                                                                                            method="POST"
+                                                                                            style="display:inline;"
+                                                                                            onsubmit="return confirmDelete('Delete this asset?')">
+                                                                                            <button type="submit"
+                                                                                                class="btn btn-sm btn-danger"><i
+                                                                                                    class="fas fa-trash"></i></button>
+                                                                                        </form>
+                                                                                    </td>
+                                                                                </tr>
+                                                                                <% }) %>
+                                                                                    <% if (filteredAssets.length===0) {
+                                                                                        %>
+                                                                                        <tr>
+                                                                                            <td colspan="10"
+                                                                                                class="empty-state"><i
+                                                                                                    class="fas fa-box-open"></i>
+                                                                                                <p>No assets found</p>
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                        <% } %>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                        <% } %>
 
-                                        <!-- Add Item/Make/Model Modals -->
-                                        <div class="modal-overlay" id="addItemModal">
-                                            <div class="modal">
-                                                <div class="modal-header">
-                                                    <h3>Add Item (Category)</h3><button class="modal-close"
-                                                        onclick="closeModal('addItemModal')">&times;</button>
-                                                </div>
-                                                <form action="/admin/assets/item" method="POST">
-                                                    <div class="form-group"><label>Item Name *</label><input type="text"
-                                                            name="item_name" class="form-control" required></div>
-                                                    <div class="form-group"><label>Item Code *</label><input type="text"
-                                                            name="item_code" class="form-control" required
-                                                            placeholder="e.g. LAP, MOB, KBD"></div>
-                                                    <div class="form-group"><label>Asset Type *</label><select
-                                                            name="asset_type" class="form-control" required>
-                                                            <option value="IT">IT</option>
-                                                            <option value="NON_IT">Non-IT</option>
-                                                        </select></div>
-                                                    <button type="submit" class="btn btn-primary"><i
-                                                            class="fas fa-save"></i> Save</button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                        <div class="modal-overlay" id="addMakeModal">
-                                            <div class="modal">
-                                                <div class="modal-header">
-                                                    <h3>Add Make</h3><button class="modal-close"
-                                                        onclick="closeModal('addMakeModal')">&times;</button>
-                                                </div>
-                                                <form action="/admin/assets/make" method="POST">
-                                                    <div class="form-group"><label>Make Name *</label><input type="text"
-                                                            name="make_name" class="form-control" required></div>
-                                                    <button type="submit" class="btn btn-primary"><i
-                                                            class="fas fa-save"></i> Save</button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                        <div class="modal-overlay" id="addModelModal">
-                                            <div class="modal">
-                                                <div class="modal-header">
-                                                    <h3>Add Model</h3><button class="modal-close"
-                                                        onclick="closeModal('addModelModal')">&times;</button>
-                                                </div>
-                                                <form action="/admin/assets/model" method="POST">
-                                                    <div class="form-group"><label>Make *</label>
-                                                        <select name="make_id" class="form-control" required>
-                                                            <option value="">Select</option>
-                                                            <% makes.forEach(m=> { %><option value="<%= m.id %>">
-                                                                    <%= m.make_name %>
-                                                                </option>
-                                                                <% }) %>
-                                                        </select>
-                                                    </div>
-                                                    <div class="form-group"><label>Model Name *</label><input
-                                                            type="text" name="model_name" class="form-control" required>
-                                                    </div>
-                                                    <button type="submit" class="btn btn-primary"><i
-                                                            class="fas fa-save"></i> Save</button>
-                                                </form>
-                                            </div>
-                                        </div>
+                                                            <!-- Add Asset Modal -->
+                                                            <div class="modal-overlay" id="addAssetModal">
+                                                                <div class="modal">
+                                                                    <div class="modal-header">
+                                                                        <h3>Add New Asset</h3><button
+                                                                            class="modal-close"
+                                                                            onclick="closeModal('addAssetModal')">&times;</button>
+                                                                    </div>
+                                                                    <form action="/admin/assets" method="POST">
+                                                                        <input type="hidden" name="asset_code"
+                                                                            value="auto">
+                                                                        <div class="form-row">
+                                                                            <div class="form-group"><label>Asset Type
+                                                                                    *</label>
+                                                                                <select name="asset_type"
+                                                                                    class="form-control" required
+                                                                                    id="addAssetType"
+                                                                                    onchange="filterCategoriesForAdd()">
+                                                                                    <option value="IT">IT</option>
+                                                                                    <option value="ADMIN">Admin</option>
+                                                                                </select>
+                                                                            </div>
+                                                                            <div class="form-group"><label>Branch
+                                                                                    *</label>
+                                                                                <select name="branch_code"
+                                                                                    class="form-control" required>
+                                                                                    <option value="">Select</option>
+                                                                                    <% branches.forEach(b=> { %><option
+                                                                                            value="<%= b.branch_code %>"
+                                                                                            data-channel="<%= b.channel_code %>">
+                                                                                            <%= b.branch_code %> - <%=
+                                                                                                    b.branch_name %>
+                                                                                        </option>
+                                                                                        <% }) %>
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="form-row">
+                                                                            <div class="form-group">
+                                                                                <label>Category</label>
+                                                                                <select class="form-control"
+                                                                                    id="addCategorySelect"
+                                                                                    onchange="filterSubcatsForAdd()">
+                                                                                    <option value="">Select Category
+                                                                                    </option>
+                                                                                    <% categories.forEach(c=> { %>
+                                                                                        <option value="<%= c.id %>"
+                                                                                            data-type="<%= c.asset_type %>">
+                                                                                            <%= c.category_name %> (<%=
+                                                                                                    c.category_code %>)
+                                                                                        </option>
+                                                                                        <% }) %>
+                                                                                </select>
+                                                                            </div>
+                                                                            <div class="form-group"><label>Sub
+                                                                                    Category</label>
+                                                                                <select name="item_id"
+                                                                                    class="form-control"
+                                                                                    id="addSubcatSelect">
+                                                                                    <option value="">Select</option>
+                                                                                    <% items.forEach(i=> { %><option
+                                                                                            value="<%= i.id %>"
+                                                                                            data-catid="<%= i.category_id %>">
+                                                                                            <%= i.item_name %> (<%=
+                                                                                                    i.item_code %>)
+                                                                                        </option>
+                                                                                        <% }) %>
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="form-row">
+                                                                            <div class="form-group"><label>Make</label>
+                                                                                <select name="make_id"
+                                                                                    class="form-control">
+                                                                                    <option value="">Select</option>
+                                                                                    <% makes.forEach(m=> { %><option
+                                                                                            value="<%= m.id %>">
+                                                                                            <%= m.make_name %>
+                                                                                        </option>
+                                                                                        <% }) %>
+                                                                                </select>
+                                                                            </div>
+                                                                            <div class="form-group"><label>Model</label>
+                                                                                <select name="model_id"
+                                                                                    class="form-control">
+                                                                                    <option value="">Select</option>
+                                                                                    <% models.forEach(m=> { %><option
+                                                                                            value="<%= m.id %>">
+                                                                                            <%= m.model_name %> (<%=
+                                                                                                    m.make_name %>)
+                                                                                        </option>
+                                                                                        <% }) %>
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="form-row">
+                                                                            <div class="form-group"><label>Serial
+                                                                                    Number</label><input type="text"
+                                                                                    name="serial_number"
+                                                                                    class="form-control"></div>
+                                                                            <div class="form-group">
+                                                                                <label>Count</label><input type="number"
+                                                                                    name="count" class="form-control"
+                                                                                    value="1" min="1"></div>
+                                                                        </div>
+                                                                        <div class="form-group"><label>Status</label>
+                                                                            <select name="status" class="form-control">
+                                                                                <option value="stock">Stock</option>
+                                                                                <option value="assigned">Assigned
+                                                                                </option>
+                                                                                <option value="scrap">Scrap</option>
+                                                                            </select>
+                                                                        </div>
+                                                                        <p
+                                                                            style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px;">
+                                                                            <i class="fas fa-info-circle"></i> Asset
+                                                                            code will be auto-generated based on type,
+                                                                            branch, and subcategory.
+                                                                        </p>
+                                                                        <div style="display:flex;gap:12px;">
+                                                                            <button type="submit"
+                                                                                class="btn btn-primary"><i
+                                                                                    class="fas fa-save"></i> Save
+                                                                                Asset</button>
+                                                                            <button type="button"
+                                                                                class="btn btn-outline"
+                                                                                onclick="closeModal('addAssetModal')"><i
+                                                                                    class="fas fa-times"></i>
+                                                                                Discard</button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
 
-                                        <script>
-                                            function openModal(id) { document.getElementById(id).classList.add('active'); }
-                                            function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-                                            function editAsset(a) {
-                                                document.getElementById('editAssetForm').action = '/admin/assets/update/' + a.id;
-                                                document.getElementById('ea_asset_code').value = a.asset_code;
-                                                document.getElementById('ea_asset_type').value = a.asset_type;
-                                                document.getElementById('ea_item_id').value = a.item_id || '';
-                                                document.getElementById('ea_branch_code').value = a.branch_code || '';
-                                                document.getElementById('ea_make_id').value = a.make_id || '';
-                                                document.getElementById('ea_model_id').value = a.model_id || '';
-                                                document.getElementById('ea_serial_number').value = a.serial_number || '';
-                                                document.getElementById('ea_count').value = a.count || 1;
-                                                document.getElementById('ea_status').value = a.status;
-                                                openModal('editAssetModal');
-                                            }
-                                            function transferAsset(a) {
-                                                document.getElementById('tr_asset_id').value = a.id;
-                                                document.getElementById('tr_asset_code').value = a.asset_code;
-                                                document.getElementById('tr_from_branch').value = a.branch_code || '';
-                                                document.getElementById('tr_from_display').value = a.branch_code ? a.branch_code + ' - ' + (a.branch_name || '') : 'N/A';
-                                                openModal('transferModal');
-                                            }
-                                            function filterTable(tableId, query) {
-                                                const rows = document.getElementById(tableId).querySelectorAll('tbody tr');
-                                                query = query.toLowerCase();
-                                                rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none'; });
-                                            }
-                                        </script>
+                                                            <!-- Edit Asset Modal -->
+                                                            <div class="modal-overlay" id="editAssetModal">
+                                                                <div class="modal">
+                                                                    <div class="modal-header">
+                                                                        <h3>Edit Asset</h3><button class="modal-close"
+                                                                            onclick="closeModal('editAssetModal')">&times;</button>
+                                                                    </div>
+                                                                    <form id="editAssetForm" method="POST">
+                                                                        <div class="form-row">
+                                                                            <div class="form-group"><label>Asset
+                                                                                    Code</label><input type="text"
+                                                                                    class="form-control"
+                                                                                    id="ea_asset_code" disabled></div>
+                                                                            <div class="form-group"><label>Asset
+                                                                                    Type</label>
+                                                                                <select name="asset_type"
+                                                                                    class="form-control"
+                                                                                    id="ea_asset_type">
+                                                                                    <option value="IT">IT</option>
+                                                                                    <option value="ADMIN">Admin</option>
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="form-row">
+                                                                            <div class="form-group">
+                                                                                <label>Category</label>
+                                                                                <select name="item_id"
+                                                                                    class="form-control"
+                                                                                    id="ea_item_id">
+                                                                                    <option value="">Select</option>
+                                                                                    <% items.forEach(i=> { %><option
+                                                                                            value="<%= i.id %>">
+                                                                                            <%= i.item_name %>
+                                                                                        </option>
+                                                                                        <% }) %>
+                                                                                </select>
+                                                                            </div>
+                                                                            <div class="form-group">
+                                                                                <label>Branch</label>
+                                                                                <select name="branch_code"
+                                                                                    class="form-control"
+                                                                                    id="ea_branch_code">
+                                                                                    <option value="">Select</option>
+                                                                                    <% branches.forEach(b=> { %><option
+                                                                                            value="<%= b.branch_code %>">
+                                                                                            <%= b.branch_code %>
+                                                                                        </option>
+                                                                                        <% }) %>
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="form-row">
+                                                                            <div class="form-group"><label>Make</label>
+                                                                                <select name="make_id"
+                                                                                    class="form-control"
+                                                                                    id="ea_make_id">
+                                                                                    <option value="">Select</option>
+                                                                                    <% makes.forEach(m=> { %><option
+                                                                                            value="<%= m.id %>">
+                                                                                            <%= m.make_name %>
+                                                                                        </option>
+                                                                                        <% }) %>
+                                                                                </select>
+                                                                            </div>
+                                                                            <div class="form-group"><label>Model</label>
+                                                                                <select name="model_id"
+                                                                                    class="form-control"
+                                                                                    id="ea_model_id">
+                                                                                    <option value="">Select</option>
+                                                                                    <% models.forEach(m=> { %><option
+                                                                                            value="<%= m.id %>">
+                                                                                            <%= m.model_name %>
+                                                                                        </option>
+                                                                                        <% }) %>
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="form-row">
+                                                                            <div class="form-group"><label>Serial
+                                                                                    Number</label><input type="text"
+                                                                                    name="serial_number"
+                                                                                    class="form-control"
+                                                                                    id="ea_serial_number"></div>
+                                                                            <div class="form-group">
+                                                                                <label>Count</label><input type="number"
+                                                                                    name="count" class="form-control"
+                                                                                    id="ea_count" min="1"></div>
+                                                                        </div>
+                                                                        <div class="form-group"><label>Status</label>
+                                                                            <select name="status" class="form-control"
+                                                                                id="ea_status">
+                                                                                <option value="stock">Stock</option>
+                                                                                <option value="assigned">Assigned
+                                                                                </option>
+                                                                                <option value="scrap">Scrap</option>
+                                                                            </select>
+                                                                        </div>
+                                                                        <div style="display:flex;gap:12px;">
+                                                                            <button type="submit"
+                                                                                class="btn btn-primary"><i
+                                                                                    class="fas fa-save"></i> Update
+                                                                                Asset</button>
+                                                                            <button type="button"
+                                                                                class="btn btn-outline"
+                                                                                onclick="closeModal('editAssetModal')"><i
+                                                                                    class="fas fa-times"></i>
+                                                                                Discard</button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
 
-                                        <%- include('../layouts/footer') %>
+                                                            <!-- Transfer Asset Modal -->
+                                                            <div class="modal-overlay" id="transferModal">
+                                                                <div class="modal">
+                                                                    <div class="modal-header">
+                                                                        <h3>Transfer Asset</h3><button
+                                                                            class="modal-close"
+                                                                            onclick="closeModal('transferModal')">&times;</button>
+                                                                    </div>
+                                                                    <form action="/admin/assets/transfer" method="POST">
+                                                                        <input type="hidden" name="asset_id"
+                                                                            id="tr_asset_id">
+                                                                        <input type="hidden" name="from_branch"
+                                                                            id="tr_from_branch">
+                                                                        <div class="form-group">
+                                                                            <label>Asset</label><input type="text"
+                                                                                class="form-control" id="tr_asset_code"
+                                                                                disabled></div>
+                                                                        <div class="form-group"><label>From
+                                                                                Branch</label><input type="text"
+                                                                                class="form-control"
+                                                                                id="tr_from_display" disabled></div>
+                                                                        <div class="form-group"><label>To Branch
+                                                                                *</label>
+                                                                            <select name="to_branch"
+                                                                                class="form-control" required>
+                                                                                <option value="">Select</option>
+                                                                                <% branches.forEach(b=> { %><option
+                                                                                        value="<%= b.branch_code %>">
+                                                                                        <%= b.branch_code %> - <%=
+                                                                                                b.branch_name %>
+                                                                                    </option>
+                                                                                    <% }) %>
+                                                                            </select>
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label>Remarks</label><input type="text"
+                                                                                name="remarks" class="form-control">
+                                                                        </div>
+                                                                        <button type="submit" class="btn btn-warning"><i
+                                                                                class="fas fa-exchange-alt"></i>
+                                                                            Transfer</button>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Add Category Modal -->
+                                                            <div class="modal-overlay" id="addCategoryModal">
+                                                                <div class="modal">
+                                                                    <div class="modal-header">
+                                                                        <h3>Add Category</h3><button class="modal-close"
+                                                                            onclick="closeModal('addCategoryModal')">&times;</button>
+                                                                    </div>
+                                                                    <form action="/admin/assets/category" method="POST">
+                                                                        <div class="form-group"><label>Category Name
+                                                                                *</label><input type="text"
+                                                                                name="category_name"
+                                                                                class="form-control" required></div>
+                                                                        <div class="form-group"><label>Category Code
+                                                                                *</label><input type="text"
+                                                                                name="category_code"
+                                                                                class="form-control" required
+                                                                                placeholder="e.g. COMP, NET, FF"></div>
+                                                                        <div class="form-group"><label>Asset Type
+                                                                                *</label>
+                                                                            <select name="asset_type"
+                                                                                class="form-control" required>
+                                                                                <option value="IT">IT</option>
+                                                                                <option value="ADMIN">Admin</option>
+                                                                            </select>
+                                                                        </div>
+                                                                        <div style="display:flex;gap:12px;">
+                                                                            <button type="submit"
+                                                                                class="btn btn-primary"><i
+                                                                                    class="fas fa-save"></i>
+                                                                                Save</button>
+                                                                            <button type="button"
+                                                                                class="btn btn-outline"
+                                                                                onclick="closeModal('addCategoryModal')"><i
+                                                                                    class="fas fa-times"></i>
+                                                                                Discard</button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Add Item (Subcategory) Modal -->
+                                                            <div class="modal-overlay" id="addItemModal">
+                                                                <div class="modal">
+                                                                    <div class="modal-header">
+                                                                        <h3>Add Sub Category</h3><button
+                                                                            class="modal-close"
+                                                                            onclick="closeModal('addItemModal')">&times;</button>
+                                                                    </div>
+                                                                    <form action="/admin/assets/item" method="POST">
+                                                                        <div class="form-group"><label>Category
+                                                                                *</label>
+                                                                            <select name="category_id"
+                                                                                class="form-control" required
+                                                                                id="itemCategorySelect"
+                                                                                onchange="autoGenerateSubcatCode()">
+                                                                                <option value="">Select Category
+                                                                                </option>
+                                                                                <% categories.forEach(c=> { %><option
+                                                                                        value="<%= c.id %>"
+                                                                                        data-code="<%= c.category_code %>"
+                                                                                        data-type="<%= c.asset_type %>">
+                                                                                        <%= c.category_name %> (<%=
+                                                                                                c.category_code %>)
+                                                                                    </option>
+                                                                                    <% }) %>
+                                                                            </select>
+                                                                        </div>
+                                                                        <div class="form-group"><label>Sub Category Name
+                                                                                *</label><input type="text"
+                                                                                name="item_name" class="form-control"
+                                                                                required></div>
+                                                                        <div class="form-group"><label>Sub Category
+                                                                                Code</label><input type="text"
+                                                                                name="item_code" class="form-control"
+                                                                                id="autoSubcatCode"
+                                                                                placeholder="Auto-generated from category code">
+                                                                            <small
+                                                                                style="color:var(--text-muted);">Leave
+                                                                                blank to auto-generate (e.g.,
+                                                                                FF0001)</small>
+                                                                        </div>
+                                                                        <input type="hidden" name="asset_type"
+                                                                            id="itemAssetType" value="IT">
+                                                                        <div style="display:flex;gap:12px;">
+                                                                            <button type="submit"
+                                                                                class="btn btn-primary"><i
+                                                                                    class="fas fa-save"></i>
+                                                                                Save</button>
+                                                                            <button type="button"
+                                                                                class="btn btn-outline"
+                                                                                onclick="closeModal('addItemModal')"><i
+                                                                                    class="fas fa-times"></i>
+                                                                                Discard</button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Add Make Modal -->
+                                                            <div class="modal-overlay" id="addMakeModal">
+                                                                <div class="modal">
+                                                                    <div class="modal-header">
+                                                                        <h3>Add Make</h3><button class="modal-close"
+                                                                            onclick="closeModal('addMakeModal')">&times;</button>
+                                                                    </div>
+                                                                    <form action="/admin/assets/make" method="POST">
+                                                                        <div class="form-group"><label>Make Name
+                                                                                *</label><input type="text"
+                                                                                name="make_name" class="form-control"
+                                                                                required></div>
+                                                                        <div style="display:flex;gap:12px;">
+                                                                            <button type="submit"
+                                                                                class="btn btn-primary"><i
+                                                                                    class="fas fa-save"></i>
+                                                                                Save</button>
+                                                                            <button type="button"
+                                                                                class="btn btn-outline"
+                                                                                onclick="closeModal('addMakeModal')"><i
+                                                                                    class="fas fa-times"></i>
+                                                                                Discard</button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Add Model Modal -->
+                                                            <div class="modal-overlay" id="addModelModal">
+                                                                <div class="modal">
+                                                                    <div class="modal-header">
+                                                                        <h3>Add Model</h3><button class="modal-close"
+                                                                            onclick="closeModal('addModelModal')">&times;</button>
+                                                                    </div>
+                                                                    <form action="/admin/assets/model" method="POST">
+                                                                        <div class="form-group"><label>Make *</label>
+                                                                            <select name="make_id" class="form-control"
+                                                                                required>
+                                                                                <option value="">Select</option>
+                                                                                <% makes.forEach(m=> { %><option
+                                                                                        value="<%= m.id %>">
+                                                                                        <%= m.make_name %>
+                                                                                    </option>
+                                                                                    <% }) %>
+                                                                            </select>
+                                                                        </div>
+                                                                        <div class="form-group"><label>Model Name
+                                                                                *</label><input type="text"
+                                                                                name="model_name" class="form-control"
+                                                                                required></div>
+                                                                        <div style="display:flex;gap:12px;">
+                                                                            <button type="submit"
+                                                                                class="btn btn-primary"><i
+                                                                                    class="fas fa-save"></i>
+                                                                                Save</button>
+                                                                            <button type="button"
+                                                                                class="btn btn-outline"
+                                                                                onclick="closeModal('addModelModal')"><i
+                                                                                    class="fas fa-times"></i>
+                                                                                Discard</button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+
+                                                            <script>
+                                                                function openModal(id) { document.getElementById(id).classList.add('active'); }
+                                                                function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+                                                                function editAsset(a) {
+                                                                    document.getElementById('editAssetForm').action = '/admin/assets/update/' + a.id;
+                                                                    document.getElementById('ea_asset_code').value = a.asset_code;
+                                                                    document.getElementById('ea_asset_type').value = a.asset_type;
+                                                                    document.getElementById('ea_item_id').value = a.item_id || '';
+                                                                    document.getElementById('ea_branch_code').value = a.branch_code || '';
+                                                                    document.getElementById('ea_make_id').value = a.make_id || '';
+                                                                    document.getElementById('ea_model_id').value = a.model_id || '';
+                                                                    document.getElementById('ea_serial_number').value = a.serial_number || '';
+                                                                    document.getElementById('ea_count').value = a.count || 1;
+                                                                    document.getElementById('ea_status').value = a.status;
+                                                                    openModal('editAssetModal');
+                                                                }
+
+                                                                function transferAsset(a) {
+                                                                    document.getElementById('tr_asset_id').value = a.id;
+                                                                    document.getElementById('tr_asset_code').value = a.asset_code;
+                                                                    document.getElementById('tr_from_branch').value = a.branch_code || '';
+                                                                    document.getElementById('tr_from_display').value = a.branch_code ? a.branch_code + ' - ' + (a.branch_name || '') : 'N/A';
+                                                                    openModal('transferModal');
+                                                                }
+
+                                                                function filterTable(tableId, query) {
+                                                                    const rows = document.getElementById(tableId).querySelectorAll('tbody tr');
+                                                                    query = query.toLowerCase();
+                                                                    rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none'; });
+                                                                }
+
+                                                                // Filter categories by selected asset type
+                                                                function filterCategoriesForAdd() {
+                                                                    const type = document.getElementById('addAssetType').value;
+                                                                    const catSelect = document.getElementById('addCategorySelect');
+                                                                    const opts = catSelect.querySelectorAll('option[data-type]');
+                                                                    opts.forEach(o => { o.style.display = o.dataset.type === type ? '' : 'none'; });
+                                                                    catSelect.value = '';
+                                                                    filterSubcatsForAdd();
+                                                                }
+
+                                                                // Filter subcategories by selected category  
+                                                                function filterSubcatsForAdd() {
+                                                                    const catId = document.getElementById('addCategorySelect').value;
+                                                                    const subSelect = document.getElementById('addSubcatSelect');
+                                                                    const opts = subSelect.querySelectorAll('option[data-catid]');
+                                                                    opts.forEach(o => {
+                                                                        if (!catId) { o.style.display = ''; }
+                                                                        else { o.style.display = o.dataset.catid === catId ? '' : 'none'; }
+                                                                    });
+                                                                    subSelect.value = '';
+                                                                }
+
+                                                                // Auto-set asset_type when category is selected in subcategory form
+                                                                function autoGenerateSubcatCode() {
+                                                                    const sel = document.getElementById('itemCategorySelect');
+                                                                    const opt = sel.options[sel.selectedIndex];
+                                                                    if (opt.dataset.type) {
+                                                                        document.getElementById('itemAssetType').value = opt.dataset.type;
+                                                                    }
+                                                                }
+                                                            </script>
+
+                                                            <%- include('../layouts/footer') %>

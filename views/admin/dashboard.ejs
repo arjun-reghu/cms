@@ -9,40 +9,48 @@
 
         <div class="stats-grid">
             <div class="stat-card blue">
-                <div class="stat-icon"><i class="fas fa-building"></i></div>
-                <div class="stat-info">
-                    <h3>
-                        <%= branchCount %>
-                    </h3>
-                    <p>Total Branches</p>
-                </div>
+                <a href="/admin/branches" class="stat-card-link">
+                    <div class="stat-icon"><i class="fas fa-building"></i></div>
+                    <div class="stat-info">
+                        <h3>
+                            <%= branchCount %>
+                        </h3>
+                        <p>Branches</p>
+                    </div>
+                </a>
             </div>
             <div class="stat-card cyan">
-                <div class="stat-icon"><i class="fas fa-box"></i></div>
-                <div class="stat-info">
-                    <h3>
-                        <%= assetCount %>
-                    </h3>
-                    <p>Total Assets</p>
-                </div>
+                <a href="/admin/assets" class="stat-card-link">
+                    <div class="stat-icon"><i class="fas fa-box"></i></div>
+                    <div class="stat-info">
+                        <h3>
+                            <%= assetCount %>
+                        </h3>
+                        <p>Assets</p>
+                    </div>
+                </a>
             </div>
             <div class="stat-card yellow">
-                <div class="stat-icon"><i class="fas fa-ticket-alt"></i></div>
-                <div class="stat-info">
-                    <h3>
-                        <%= openTickets %>
-                    </h3>
-                    <p>Pending Approvals</p>
-                </div>
+                <a href="/admin/assistance/tickets" class="stat-card-link">
+                    <div class="stat-icon"><i class="fas fa-ticket-alt"></i></div>
+                    <div class="stat-info">
+                        <h3>
+                            <%= openTickets %>
+                        </h3>
+                        <p>Pending Tickets</p>
+                    </div>
+                </a>
             </div>
             <div class="stat-card green">
-                <div class="stat-icon"><i class="fas fa-users"></i></div>
-                <div class="stat-info">
-                    <h3>
-                        <%= employeeCount %>
-                    </h3>
-                    <p>Total Employees</p>
-                </div>
+                <a href="/admin/employees" class="stat-card-link">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <h3>
+                            <%= employeeCount %>
+                        </h3>
+                        <p>Employees</p>
+                    </div>
+                </a>
             </div>
             <div class="stat-card purple">
                 <div class="stat-icon"><i class="fas fa-envelope"></i></div>

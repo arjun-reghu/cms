@@ -31,20 +31,20 @@
                             <!-- Assets -->
                             <% if ([1, 3, 4, 5].includes(roleId)) { %>
                                 <div
-                                    class="sidebar-dropdown <%= ['assets', 'branch-assets', 'asset-catalogue', 'employee-assets', 'stock'].includes(currentPath) ? 'open' : '' %>">
+                                    class="sidebar-dropdown <%= ['assets', 'branch-assets', 'asset-catalogue', 'asset-dashboard', 'employee-assets', 'stock'].includes(currentPath) ? 'open' : '' %>">
                                     <a href="#" class="sidebar-link dropdown-toggle">
                                         <i class="fas fa-box"></i>
                                         <span>Assets</span>
                                         <i class="fas fa-chevron-down dropdown-arrow"></i>
                                     </a>
                                     <div class="dropdown-menu">
+                                        <a href="<%= basePath %>/assets?view=dashboard"
+                                            class="sidebar-sublink <%= currentPath === 'asset-dashboard' ? 'active' : '' %>">
+                                            <span>Dashboard</span>
+                                        </a>
                                         <a href="<%= basePath %>/assets?view=branch"
                                             class="sidebar-sublink <%= currentPath === 'branch-assets' ? 'active' : '' %>">
                                             <span>Branch Assets</span>
-                                        </a>
-                                        <a href="<%= basePath %>/assets?view=catalogue"
-                                            class="sidebar-sublink <%= currentPath === 'asset-catalogue' ? 'active' : '' %>">
-                                            <span>Asset Catalogue</span>
                                         </a>
                                         <% if ([1, 3].includes(roleId)) { %>
                                             <a href="<%= basePath %>/assets?view=employee"
@@ -55,6 +55,10 @@
                                                 <a href="<%= basePath %>/assets?view=stock"
                                                     class="sidebar-sublink <%= currentPath === 'stock' ? 'active' : '' %>">
                                                     <span>Stock</span>
+                                                </a>
+                                                <a href="<%= basePath %>/assets?view=catalogue"
+                                                    class="sidebar-sublink <%= currentPath === 'asset-catalogue' ? 'active' : '' %>">
+                                                    <span>Catalogue</span>
                                                 </a>
                                     </div>
                                 </div>

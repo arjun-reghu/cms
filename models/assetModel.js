@@ -1,199 +1,205 @@
 const db = require('../config/db');
 
 const AssetModel = {
+    // ===== ASSETS =====
     findAll: async () => {
         const [rows] = await db.query(
-            `SELECT a.*, i.item_name, i.item_code, mk.make_name, md.model_name, b.branch_name
+            `SELECT a.*, i.item_name, i.item_code, i.category_id, m.make_name, mo.model_name, b.branch_name, b.channel_code,
+             c.category_name, c.category_code
              FROM assets a
              LEFT JOIN items i ON a.item_id = i.id
-             LEFT JOIN makes mk ON a.make_id = mk.id
-             LEFT JOIN models md ON a.model_id = md.id
+             LEFT JOIN categories c ON i.category_id = c.id
+             LEFT JOIN makes m ON a.make_id = m.id
+             LEFT JOIN models mo ON a.model_id = mo.id
              LEFT JOIN branches b ON a.branch_code = b.branch_code
              ORDER BY a.created_at DESC`
         );
         return rows;
     },
-    findByBranch: async (branchCode) => {
-        const [rows] = await db.query(
-            `SELECT a.*, i.item_name, i.item_code, mk.make_name, md.model_name
-             FROM assets a
-             LEFT JOIN items i ON a.item_id = i.id
-             LEFT JOIN makes mk ON a.make_id = mk.id
-             LEFT JOIN models md ON a.model_id = md.id
-             WHERE a.branch_code = ? ORDER BY i.item_name`, [branchCode]
-        );
-        return rows;
-    },
+
     findById: async (id) => {
         const [rows] = await db.query(
-            `SELECT a.*, i.item_name, i.item_code, mk.make_name, md.model_name, b.branch_name
+            `SELECT a.*, i.item_name, i.item_code, m.make_name, mo.model_name
              FROM assets a
              LEFT JOIN items i ON a.item_id = i.id
-             LEFT JOIN makes mk ON a.make_id = mk.id
-             LEFT JOIN models md ON a.model_id = md.id
-             LEFT JOIN branches b ON a.branch_code = b.branch_code
+             LEFT JOIN makes m ON a.make_id = m.id
+             LEFT JOIN models mo ON a.model_id = mo.id
              WHERE a.id = ?`, [id]
         );
         return rows[0];
     },
-    findByType: async (type) => {
+
+    findFiltered: async (filters) => {
+        let sql = `SELECT a.*, i.item_name, i.item_code, i.category_id, m.make_name, mo.model_name, b.branch_name, b.channel_code,
+                    c.category_name, c.category_code
+                    FROM assets a
+                    LEFT JOIN items i ON a.item_id = i.id
+                    LEFT JOIN categories c ON i.category_id = c.id
+                    LEFT JOIN makes m ON a.make_id = m.id
+                    LEFT JOIN models mo ON a.model_id = mo.id
+                    LEFT JOIN branches b ON a.branch_code = b.branch_code WHERE 1=1`;
+        const params = [];
+        if (filters.branch_code) { sql += ' AND a.branch_code = ?'; params.push(filters.branch_code); }
+        if (filters.item_id) { sql += ' AND a.item_id = ?'; params.push(filters.item_id); }
+        if (filters.make_id) { sql += ' AND a.make_id = ?'; params.push(filters.make_id); }
+        if (filters.status) { sql += ' AND a.status = ?'; params.push(filters.status); }
+        if (filters.asset_type) { sql += ' AND a.asset_type = ?'; params.push(filters.asset_type); }
+        sql += ' ORDER BY a.created_at DESC';
+        const [rows] = await db.query(sql, params);
+        return rows;
+    },
+
+    getCount: async () => {
+        const [rows] = await db.query('SELECT COUNT(*) as count FROM assets');
+        return rows[0].count;
+    },
+
+    getCountByCategory: async () => {
         const [rows] = await db.query(
-            `SELECT a.*, i.item_name, i.item_code, mk.make_name, md.model_name, b.branch_name
-             FROM assets a
-             LEFT JOIN items i ON a.item_id = i.id
-             LEFT JOIN makes mk ON a.make_id = mk.id
-             LEFT JOIN models md ON a.model_id = md.id
-             LEFT JOIN branches b ON a.branch_code = b.branch_code
-             WHERE a.asset_type = ? ORDER BY a.created_at DESC`, [type]
+            `SELECT c.category_name, c.category_code, c.asset_type, i.item_name, i.item_code,
+             COUNT(a.id) as total_count
+             FROM categories c
+             LEFT JOIN items i ON i.category_id = c.id
+             LEFT JOIN assets a ON a.item_id = i.id
+             GROUP BY c.id, c.category_name, c.category_code, c.asset_type, i.id, i.item_name, i.item_code
+             HAVING COUNT(a.id) > 0
+             ORDER BY c.asset_type, c.category_name, i.item_name`
         );
         return rows;
     },
-    findByStatus: async (status) => {
+
+    getCategorySummary: async () => {
         const [rows] = await db.query(
-            `SELECT a.*, i.item_name, i.item_code, mk.make_name, md.model_name, b.branch_name
-             FROM assets a LEFT JOIN items i ON a.item_id = i.id
-             LEFT JOIN makes mk ON a.make_id = mk.id LEFT JOIN models md ON a.model_id = md.id
-             LEFT JOIN branches b ON a.branch_code = b.branch_code
-             WHERE a.status = ? ORDER BY a.created_at DESC`, [status]
+            `SELECT c.category_name, c.category_code, c.asset_type, COUNT(a.id) as total_count
+             FROM categories c
+             LEFT JOIN items i ON i.category_id = c.id
+             LEFT JOIN assets a ON a.item_id = i.id
+             GROUP BY c.id, c.category_name, c.category_code, c.asset_type
+             ORDER BY c.asset_type, c.category_name`
         );
         return rows;
     },
-    findByEmployee: async (employeeCode) => {
-        const [rows] = await db.query(
-            `SELECT a.*, i.item_name, mk.make_name, md.model_name, ah.assigned_date
-             FROM asset_history ah
-             JOIN assets a ON ah.asset_id = a.id
-             LEFT JOIN items i ON a.item_id = i.id
-             LEFT JOIN makes mk ON a.make_id = mk.id
-             LEFT JOIN models md ON a.model_id = md.id
-             WHERE ah.employee_code = ? AND ah.returned_date IS NULL`, [employeeCode]
-        );
-        return rows;
-    },
+
     create: async (data) => {
         const [result] = await db.query(
             `INSERT INTO assets (asset_code, branch_code, item_id, make_id, model_id, serial_number, count, asset_type, status)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [data.asset_code, data.branch_code, data.item_id, data.make_id, data.model_id || null, data.serial_number, data.count || 1, data.asset_type, data.status || 'stock']
+            [data.asset_code, data.branch_code || null, data.item_id || null, data.make_id || null,
+            data.model_id || null, data.serial_number || null, data.count || 1, data.asset_type, data.status || 'stock']
         );
         return result;
     },
+
     update: async (id, data) => {
-        const [result] = await db.query(
-            `UPDATE assets SET branch_code = ?, item_id = ?, make_id = ?, model_id = ?, serial_number = ?, count = ?, asset_type = ?, status = ? WHERE id = ?`,
-            [data.branch_code, data.item_id, data.make_id, data.model_id || null, data.serial_number, data.count, data.asset_type, data.status, id]
+        await db.query(
+            `UPDATE assets SET branch_code=?, item_id=?, make_id=?, model_id=?, serial_number=?, count=?, asset_type=?, status=? WHERE id=?`,
+            [data.branch_code || null, data.item_id || null, data.make_id || null,
+            data.model_id || null, data.serial_number || null, data.count || 1, data.asset_type, data.status, id]
         );
-        return result;
     },
+
     delete: async (id) => {
-        const [result] = await db.query(`DELETE FROM assets WHERE id = ?`, [id]);
-        return result;
+        await db.query('DELETE FROM assets WHERE id = ?', [id]);
     },
-    getCount: async () => {
-        const [rows] = await db.query(`SELECT COUNT(*) as count FROM assets`);
-        return rows[0].count;
+
+    // ===== CATEGORIES =====
+    getCategories: async () => {
+        const [rows] = await db.query('SELECT * FROM categories ORDER BY asset_type, category_name');
+        return rows;
     },
-    getCountByStatus: async (status) => {
-        const [rows] = await db.query(`SELECT COUNT(*) as count FROM assets WHERE status = ?`, [status]);
-        return rows[0].count;
+
+    createCategory: async (data) => {
+        await db.query(
+            'INSERT INTO categories (category_name, category_code, asset_type) VALUES (?, ?, ?)',
+            [data.category_name, data.category_code, data.asset_type]
+        );
     },
-    // Items (Catalogue)
+
+    // ===== ITEMS (Subcategories) =====
     getItems: async () => {
-        const [rows] = await db.query(`SELECT * FROM items ORDER BY item_name`);
-        return rows;
-    },
-    getItemsByType: async (type) => {
-        const [rows] = await db.query(`SELECT * FROM items WHERE asset_type = ? ORDER BY item_name`, [type]);
-        return rows;
-    },
-    createItem: async (data) => {
-        const [result] = await db.query(`INSERT INTO items (item_name, item_code, asset_type) VALUES (?, ?, ?)`, [data.item_name, data.item_code, data.asset_type]);
-        return result;
-    },
-    updateItem: async (id, data) => {
-        const [result] = await db.query(`UPDATE items SET item_name = ?, item_code = ?, asset_type = ? WHERE id = ?`, [data.item_name, data.item_code, data.asset_type, id]);
-        return result;
-    },
-    deleteItem: async (id) => {
-        const [result] = await db.query(`DELETE FROM items WHERE id = ?`, [id]);
-        return result;
-    },
-    // Makes
-    getMakes: async () => {
-        const [rows] = await db.query(`SELECT * FROM makes ORDER BY make_name`);
-        return rows;
-    },
-    createMake: async (name) => {
-        const [result] = await db.query(`INSERT INTO makes (make_name) VALUES (?)`, [name]);
-        return result;
-    },
-    deleteMake: async (id) => {
-        const [result] = await db.query(`DELETE FROM makes WHERE id = ?`, [id]);
-        return result;
-    },
-    // Models
-    getModels: async () => {
-        const [rows] = await db.query(`SELECT m.*, mk.make_name FROM models m JOIN makes mk ON m.make_id = mk.id ORDER BY mk.make_name, m.model_name`);
-        return rows;
-    },
-    getModelsByMake: async (makeId) => {
-        const [rows] = await db.query(`SELECT * FROM models WHERE make_id = ? ORDER BY model_name`, [makeId]);
-        return rows;
-    },
-    createModel: async (data) => {
-        const [result] = await db.query(`INSERT INTO models (make_id, model_name) VALUES (?, ?)`, [data.make_id, data.model_name]);
-        return result;
-    },
-    deleteModel: async (id) => {
-        const [result] = await db.query(`DELETE FROM models WHERE id = ?`, [id]);
-        return result;
-    },
-    // Asset History
-    assignAsset: async (data) => {
-        const [result] = await db.query(
-            `INSERT INTO asset_history (asset_id, employee_code, assigned_date, remarks) VALUES (?, ?, ?, ?)`,
-            [data.asset_id, data.employee_code, data.assigned_date || new Date(), data.remarks]
-        );
-        await db.query(`UPDATE assets SET status = 'assigned' WHERE id = ?`, [data.asset_id]);
-        return result;
-    },
-    returnAsset: async (historyId, assetId, remarks) => {
-        await db.query(`UPDATE asset_history SET returned_date = NOW(), remarks = ? WHERE id = ?`, [remarks, historyId]);
-        await db.query(`UPDATE assets SET status = 'stock' WHERE id = ?`, [assetId]);
-    },
-    getAssetHistory: async (assetId) => {
         const [rows] = await db.query(
-            `SELECT ah.*, e.employee_name FROM asset_history ah LEFT JOIN employees e ON ah.employee_code = e.employee_code WHERE ah.asset_id = ? ORDER BY ah.assigned_date DESC`, [assetId]
+            `SELECT i.*, c.category_name, c.category_code 
+             FROM items i 
+             LEFT JOIN categories c ON i.category_id = c.id
+             ORDER BY i.asset_type, c.category_name, i.item_name`
         );
         return rows;
     },
-    // Transfer
+
+    createItem: async (data) => {
+        // Auto-generate item_code from category code + sequential number
+        let itemCode = data.item_code;
+        if (data.category_id && !data.item_code) {
+            const [cat] = await db.query('SELECT category_code FROM categories WHERE id = ?', [data.category_id]);
+            if (cat.length > 0) {
+                const catCode = cat[0].category_code;
+                const [existing] = await db.query(
+                    'SELECT COUNT(*) as cnt FROM items WHERE category_id = ?', [data.category_id]
+                );
+                const nextNum = (existing[0].cnt + 1).toString().padStart(4, '0');
+                itemCode = catCode + nextNum;
+            }
+        }
+        await db.query(
+            'INSERT INTO items (item_name, item_code, category_id, asset_type) VALUES (?, ?, ?, ?)',
+            [data.item_name, itemCode, data.category_id || null, data.asset_type]
+        );
+    },
+
+    // ===== MAKES =====
+    getMakes: async () => {
+        const [rows] = await db.query('SELECT * FROM makes ORDER BY make_name');
+        return rows;
+    },
+
+    createMake: async (name) => {
+        await db.query('INSERT INTO makes (make_name) VALUES (?)', [name]);
+    },
+
+    // ===== MODELS =====
+    getModels: async () => {
+        const [rows] = await db.query(
+            `SELECT mo.*, m.make_name FROM models mo JOIN makes m ON mo.make_id = m.id ORDER BY m.make_name, mo.model_name`
+        );
+        return rows;
+    },
+
+    createModel: async (data) => {
+        await db.query('INSERT INTO models (make_id, model_name) VALUES (?, ?)', [data.make_id, data.model_name]);
+    },
+
+    // ===== ASSET HISTORY =====
+    getHistory: async (assetId) => {
+        const [rows] = await db.query(
+            `SELECT ah.*, e.employee_name FROM asset_history ah
+             LEFT JOIN employees e ON ah.employee_code = e.employee_code
+             WHERE ah.asset_id = ? ORDER BY ah.assigned_date DESC`, [assetId]
+        );
+        return rows;
+    },
+
+    assignAsset: async (data) => {
+        await db.query(
+            'INSERT INTO asset_history (asset_id, employee_code, assigned_date, remarks) VALUES (?, ?, ?, ?)',
+            [data.asset_id, data.employee_code, data.assigned_date, data.remarks]
+        );
+        await db.query('UPDATE assets SET status = ? WHERE id = ?', ['assigned', data.asset_id]);
+    },
+
+    // ===== TRANSFERS =====
     transferAsset: async (data) => {
         await db.query(
-            `INSERT INTO asset_transfer_history (asset_id, from_branch, to_branch, transferred_by, transfer_date, remarks) VALUES (?, ?, ?, ?, ?, ?)`,
-            [data.asset_id, data.from_branch, data.to_branch, data.transferred_by, data.transfer_date || new Date(), data.remarks]
+            `INSERT INTO asset_transfer_history (asset_id, from_branch, to_branch, transferred_by, transfer_date, remarks)
+             VALUES (?, ?, ?, ?, CURDATE(), ?)`,
+            [data.asset_id, data.from_branch, data.to_branch, data.transferred_by, data.remarks]
         );
-        await db.query(`UPDATE assets SET branch_code = ? WHERE id = ?`, [data.to_branch, data.asset_id]);
+        await db.query('UPDATE assets SET branch_code = ? WHERE id = ?', [data.to_branch, data.asset_id]);
     },
+
     getTransferHistory: async (assetId) => {
-        const [rows] = await db.query(`SELECT * FROM asset_transfer_history WHERE asset_id = ? ORDER BY transfer_date DESC`, [assetId]);
-        return rows;
-    },
-    // Filtered for reports
-    findFiltered: async (filters) => {
-        let query = `SELECT a.*, i.item_name, i.item_code, mk.make_name, md.model_name, b.branch_name, b.channel_code
-             FROM assets a LEFT JOIN items i ON a.item_id = i.id
-             LEFT JOIN makes mk ON a.make_id = mk.id LEFT JOIN models md ON a.model_id = md.id
-             LEFT JOIN branches b ON a.branch_code = b.branch_code WHERE 1=1`;
-        const params = [];
-        if (filters.channel_code) { query += ` AND b.channel_code = ?`; params.push(filters.channel_code); }
-        if (filters.branch_code) { query += ` AND a.branch_code = ?`; params.push(filters.branch_code); }
-        if (filters.asset_type) { query += ` AND a.asset_type = ?`; params.push(filters.asset_type); }
-        if (filters.item_id) { query += ` AND a.item_id = ?`; params.push(filters.item_id); }
-        if (filters.make_id) { query += ` AND a.make_id = ?`; params.push(filters.make_id); }
-        if (filters.model_id) { query += ` AND a.model_id = ?`; params.push(filters.model_id); }
-        query += ` ORDER BY a.created_at DESC`;
-        const [rows] = await db.query(query, params);
+        const [rows] = await db.query(
+            'SELECT * FROM asset_transfer_history WHERE asset_id = ? ORDER BY transfer_date DESC', [assetId]
+        );
         return rows;
     }
 };

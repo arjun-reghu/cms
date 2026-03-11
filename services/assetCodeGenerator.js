@@ -1,56 +1,61 @@
 /**
  * Asset Code Generator
- * Three types:
- * 1. IT Personal: Item/Make/SerialNumber (e.g., LAP/Dell/ABC12345)
- * 2. IT Branch:   BranchCode/Item/Make/Serial|Count (e.g., BR001/KBD/Logitech/SN1234)
- * 3. Non-IT:      Channel/Branch/ItemCode/Count (e.g., CH01/BR001/CHA/05)
+ * Two types:
+ * 1. Admin (non-IT): channelcode/branchcode/subcategorycode/count
+ * 2. IT:             branchcode/subcategorycode/serialnumber/count
  */
 
 const db = require('../config/db');
 
-const PERSONAL_ITEMS = ['LAP', 'MOB', 'TAB']; // Laptop, Mobile, Tablet item codes
-
 const AssetCodeGenerator = {
     generate: async (data) => {
-        const { item_code, make_name, serial_number, branch_code, channel_code, asset_type, count } = data;
+        const { item_code, serial_number, branch_code, channel_code, asset_type } = data;
 
-        if (asset_type === 'IT') {
-            if (PERSONAL_ITEMS.includes(item_code?.toUpperCase())) {
-                // IT Personal: Item/Make/SerialNumber
-                return `${item_code}/${make_name}/${serial_number}`;
-            } else {
-                // IT Branch: BranchCode/Item/Make/Serial|Count
-                if (serial_number) {
-                    return `${branch_code}/${item_code}/${make_name}/${serial_number}`;
-                } else {
-                    const countStr = (count || 1).toString().padStart(2, '0');
-                    return `${branch_code}/${item_code}/${make_name}/${countStr}`;
-                }
-            }
+        if (asset_type === 'ADMIN') {
+            // Admin assets: channelcode/branchcode/subcategorycode/count
+            const count = await AssetCodeGenerator.getNextAdminCount(channel_code, branch_code, item_code);
+            const countStr = count.toString().padStart(2, '0');
+            return `${channel_code || 'HO'}/${branch_code}/${item_code}/${countStr}`;
         } else {
-            // Non-IT: Channel/Branch/ItemCode/Count
-            const countStr = (count || 1).toString().padStart(2, '0');
-            return `${channel_code}/${branch_code}/${item_code}/${countStr}`;
+            // IT assets: branchcode/subcategorycode/serialnumber/count
+            if (serial_number) {
+                const count = await AssetCodeGenerator.getNextITCount(branch_code, item_code, serial_number);
+                return `${branch_code}/${item_code}/${serial_number}/${count}`;
+            } else {
+                const count = await AssetCodeGenerator.getNextITCountNoSerial(branch_code, item_code);
+                const countStr = count.toString().padStart(2, '0');
+                return `${branch_code}/${item_code}/${countStr}`;
+            }
         }
     },
 
-    getNextCount: async (branchCode, itemCode, makeId) => {
+    getNextITCount: async (branchCode, itemCode, serialNumber) => {
         const [rows] = await db.query(
             `SELECT COUNT(*) as count FROM assets a
              JOIN items i ON a.item_id = i.id
-             WHERE a.branch_code = ? AND i.item_code = ? AND a.make_id = ?`,
-            [branchCode, itemCode, makeId]
+             WHERE a.branch_code = ? AND i.item_code = ? AND a.serial_number = ?`,
+            [branchCode, itemCode, serialNumber]
         );
         return rows[0].count + 1;
     },
 
-    getNextNonITCount: async (channelCode, branchCode, itemCode) => {
+    getNextITCountNoSerial: async (branchCode, itemCode) => {
+        const [rows] = await db.query(
+            `SELECT COUNT(*) as count FROM assets a
+             JOIN items i ON a.item_id = i.id
+             WHERE a.branch_code = ? AND i.item_code = ?`,
+            [branchCode, itemCode]
+        );
+        return rows[0].count + 1;
+    },
+
+    getNextAdminCount: async (channelCode, branchCode, itemCode) => {
         const [rows] = await db.query(
             `SELECT COUNT(*) as count FROM assets a
              JOIN items i ON a.item_id = i.id
              JOIN branches b ON a.branch_code = b.branch_code
              WHERE b.channel_code = ? AND a.branch_code = ? AND i.item_code = ?`,
-            [channelCode, branchCode, itemCode]
+            [channelCode || 'HO', branchCode, itemCode]
         );
         return rows[0].count + 1;
     }

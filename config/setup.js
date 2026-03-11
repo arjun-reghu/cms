@@ -84,8 +84,8 @@ async function setup() {
                 date_of_birth DATE,
                 branch_code VARCHAR(50),
                 email_id VARCHAR(150),
-                email_status ENUM('active', 'inactive', 'not_created') DEFAULT 'not_created',
-                ad_account_status ENUM('active', 'inactive', 'not_created') DEFAULT 'not_created',
+                email_status ENUM('active', 'not_created', 'lockout', 'closed') DEFAULT 'not_created',
+                ad_account_status ENUM('active', 'not_created', 'disabled') DEFAULT 'not_created',
                 status ENUM('active', 'resigned', 'terminated') DEFAULT 'active',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -94,18 +94,33 @@ async function setup() {
         `);
         console.log('✔ employees table created.');
 
-        // 5. Items (Asset Catalogue)
+        // 5. Categories
+        await connection.execute(`
+            CREATE TABLE IF NOT EXISTS categories (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                category_name VARCHAR(100) NOT NULL,
+                category_code VARCHAR(20) NOT NULL UNIQUE,
+                asset_type ENUM('IT', 'ADMIN') NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✔ categories table created.');
+
+        // 6. Items (Subcategories)
         await connection.execute(`
             CREATE TABLE IF NOT EXISTS items (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 item_name VARCHAR(100) NOT NULL,
                 item_code VARCHAR(50) NOT NULL UNIQUE,
-                asset_type ENUM('IT', 'NON_IT') NOT NULL,
+                category_id INT,
+                asset_type ENUM('IT', 'ADMIN') NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (category_id) REFERENCES categories(id)
             )
         `);
-        console.log('✔ items table created.');
+        console.log('✔ items (subcategories) table created.');
 
         // 6. Makes
         await connection.execute(`
@@ -140,7 +155,7 @@ async function setup() {
                 model_id INT,
                 serial_number VARCHAR(100),
                 count INT DEFAULT 1,
-                asset_type ENUM('IT', 'NON_IT') NOT NULL,
+                asset_type ENUM('IT', 'ADMIN') NOT NULL,
                 status ENUM('stock', 'assigned', 'scrap') DEFAULT 'stock',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -299,6 +314,37 @@ async function setup() {
             );
             console.log('✔ Admin user already exists, password reset to "admin".');
         }
+
+        // Seed categories
+        const itCategories = [
+            ['Computing', 'COMP'],
+            ['Networking', 'NET'],
+            ['Servers', 'SRV'],
+            ['Storage', 'STR'],
+            ['Peripherals', 'PER'],
+            ['Security', 'SEC'],
+            ['Communication', 'COM'],
+            ['Power', 'PWR']
+        ];
+        const adminCategories = [
+            ['Furniture & Fixtures', 'FF'],
+            ['Signages', 'SGN'],
+            ['Safety Equipment', 'SAF'],
+            ['Electrical Fittings', 'ELF']
+        ];
+        for (const [name, code] of itCategories) {
+            await connection.execute(
+                `INSERT IGNORE INTO categories (category_name, category_code, asset_type) VALUES (?, ?, 'IT')`,
+                [name, code]
+            );
+        }
+        for (const [name, code] of adminCategories) {
+            await connection.execute(
+                `INSERT IGNORE INTO categories (category_name, category_code, asset_type) VALUES (?, ?, 'ADMIN')`,
+                [name, code]
+            );
+        }
+        console.log('✔ Categories seeded.');
 
         console.log('\n========================================');
         console.log('  Database setup completed successfully!');
